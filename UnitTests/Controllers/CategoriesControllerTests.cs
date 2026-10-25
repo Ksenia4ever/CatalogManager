@@ -2,6 +2,7 @@
 using CatalogManager.Application.Interfaces;
 using CatalogManager.Controllers;
 using CatalogManager.Domain.Entities;
+using CatalogManager.Models;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 
@@ -9,313 +10,262 @@ namespace CatalogManager.UnitTests.Controllers;
 
 public class CategoriesControllerTests
 {
-    private readonly Mock<ICategoryService> _serviceMock;
+    private readonly Mock<ICategoryService> _mock = new();
     private readonly CategoriesController _controller;
 
     public CategoriesControllerTests()
     {
-        _serviceMock = new Mock<ICategoryService>();
-        _controller = new CategoriesController(_serviceMock.Object);
+        _controller = new CategoriesController(_mock.Object);
     }
 
-    [Fact]
-    public async Task Index_ReturnsViewWithCategories()
+    private static Category Entity() => new()
     {
-        var categories = new List<Category>
-        {
-            new() { Id = 1, Name = "Electronics" },
-            new() { Id = 2, Name = "Books" }
-        };
+        Id = 1,
+        Name = "Electronics",
+        Description = "Devices"
+    };
 
-        _serviceMock.Setup(s => s.GetAllAsync())
+    private static CategoryFormViewModel Form() => new()
+    {
+        Id = 1,
+        Name = "Electronics",
+        Description = "Devices"
+    };
+
+    [Fact]
+    public async Task Index_ReturnsCategories()
+    {
+        var categories = new List<Category> { Entity() };
+
+        _mock.Setup(x => x.GetAllAsync())
             .ReturnsAsync(categories);
 
         var result = await _controller.Index();
 
         var view = Assert.IsType<ViewResult>(result);
-        var model = Assert.IsType<List<Category>>(view.Model);
-
-        Assert.Equal(2, model.Count);
-        _serviceMock.Verify(s => s.GetAllAsync(), Times.Once);
+        Assert.Same(categories, view.Model);
+        _mock.Verify(x => x.GetAllAsync(), Times.Once);
     }
 
     [Fact]
-    public async Task Details_ExistingCategory_ReturnsView()
+    public async Task Details_Existing_ReturnsView()
     {
-        var category = new Category
-        {
-            Id = 1,
-            Name = "Electronics"
-        };
-
-        _serviceMock.Setup(s => s.GetByIdAsync(1))
+        var category = Entity();
+        _mock.Setup(x => x.GetByIdAsync(1))
             .ReturnsAsync(category);
 
         var result = await _controller.Details(1);
 
-        var view = Assert.IsType<ViewResult>(result);
-        Assert.Same(category, view.Model);
+        Assert.Same(category,
+            Assert.IsType<ViewResult>(result).Model);
     }
 
     [Fact]
-    public async Task Details_NonExistingCategory_ReturnsNotFound()
+    public async Task Details_Missing_ReturnsNotFound()
     {
-        _serviceMock.Setup(s => s.GetByIdAsync(999))
-            .ReturnsAsync((Category?)null);
-
         var result = await _controller.Details(999);
-
         Assert.IsType<NotFoundResult>(result);
     }
 
     [Fact]
-    public void CreateGet_ReturnsView()
+    public void CreateGet_ReturnsForm()
     {
         var result = _controller.Create();
 
-        Assert.IsType<ViewResult>(result);
+        var view = Assert.IsType<ViewResult>(result);
+        Assert.IsType<CategoryFormViewModel>(view.Model);
     }
 
     [Fact]
-    public async Task CreatePost_ValidCategory_RedirectsToIndex()
+    public async Task CreatePost_Valid_Redirects()
     {
-        var category = new Category
-        {
-            Name = "Electronics"
-        };
+        var model = Form();
 
-        var result = await _controller.Create(category);
+        var result = await _controller.Create(model);
 
-        var redirect = Assert.IsType<RedirectToActionResult>(result);
+        var redirect =
+            Assert.IsType<RedirectToActionResult>(result);
 
         Assert.Equal("Index", redirect.ActionName);
 
-        _serviceMock.Verify(
-            s => s.CreateAsync(category),
-            Times.Once);
+        _mock.Verify(x => x.CreateAsync(
+            It.Is<Category>(c =>
+                c.Name == model.Name &&
+                c.Description == model.Description &&
+                c.Id == 0)), Times.Once);
     }
 
     [Fact]
-    public async Task CreatePost_InvalidModel_ReturnsView()
+    public async Task CreatePost_Invalid_ReturnsForm()
     {
-        var category = new Category { Name = "" };
+        var model = Form();
+        model.Name = "";
 
         _controller.ModelState.AddModelError(
-            "Name", "Name is required.");
+            "Name", "Required");
 
-        var result = await _controller.Create(category);
+        var result = await _controller.Create(model);
 
-        var view = Assert.IsType<ViewResult>(result);
+        Assert.Same(model,
+            Assert.IsType<ViewResult>(result).Model);
 
-        Assert.Same(category, view.Model);
-
-        _serviceMock.Verify(
-            s => s.CreateAsync(It.IsAny<Category>()),
-            Times.Never);
+        _mock.Verify(x => x.CreateAsync(
+            It.IsAny<Category>()), Times.Never);
     }
 
     [Fact]
-    public async Task CreatePost_ServiceThrows_ReturnsViewWithError()
+    public async Task CreatePost_ServiceThrows_ReturnsError()
     {
-        var category = new Category { Name = "Test" };
+        var model = Form();
 
-        _serviceMock.Setup(s => s.CreateAsync(category))
-            .ThrowsAsync(new ArgumentException(
-                "Category name is required."));
+        _mock.Setup(x => x.CreateAsync(
+            It.IsAny<Category>()))
+            .ThrowsAsync(new ArgumentException("Invalid name"));
 
-        var result = await _controller.Create(category);
+        var result = await _controller.Create(model);
 
-        var view = Assert.IsType<ViewResult>(result);
-
-        Assert.Same(category, view.Model);
+        Assert.IsType<ViewResult>(result);
         Assert.False(_controller.ModelState.IsValid);
     }
 
     [Fact]
-    public async Task EditGet_ExistingCategory_ReturnsView()
+    public async Task EditGet_Existing_ReturnsForm()
     {
-        var category = new Category
-        {
-            Id = 1,
-            Name = "Electronics"
-        };
-
-        _serviceMock.Setup(s => s.GetByIdAsync(1))
-            .ReturnsAsync(category);
+        _mock.Setup(x => x.GetByIdAsync(1))
+            .ReturnsAsync(Entity());
 
         var result = await _controller.Edit(1);
 
         var view = Assert.IsType<ViewResult>(result);
+        var model =
+            Assert.IsType<CategoryFormViewModel>(view.Model);
 
-        Assert.Same(category, view.Model);
+        Assert.Equal(1, model.Id);
+        Assert.Equal("Electronics", model.Name);
+        Assert.Equal("Devices", model.Description);
     }
 
     [Fact]
-    public async Task EditGet_NonExistingCategory_ReturnsNotFound()
+    public async Task EditGet_Missing_ReturnsNotFound()
     {
-        _serviceMock.Setup(s => s.GetByIdAsync(999))
-            .ReturnsAsync((Category?)null);
-
         var result = await _controller.Edit(999);
-
         Assert.IsType<NotFoundResult>(result);
     }
 
     [Fact]
     public async Task EditPost_DifferentIds_ReturnsBadRequest()
     {
-        var category = new Category
-        {
-            Id = 1,
-            Name = "Electronics"
-        };
-
-        var result = await _controller.Edit(2, category);
+        var result = await _controller.Edit(2, Form());
 
         Assert.IsType<BadRequestResult>(result);
 
-        _serviceMock.Verify(
-            s => s.UpdateAsync(It.IsAny<Category>()),
-            Times.Never);
+        _mock.Verify(x => x.UpdateAsync(
+            It.IsAny<Category>()), Times.Never);
     }
 
     [Fact]
-    public async Task EditPost_ValidCategory_RedirectsToIndex()
+    public async Task EditPost_Valid_Redirects()
     {
-        var category = new Category
-        {
-            Id = 1,
-            Name = "Updated"
-        };
+        var model = Form();
 
-        _serviceMock.Setup(s => s.UpdateAsync(category))
-            .ReturnsAsync(true);
+        _mock.Setup(x => x.UpdateAsync(
+            It.IsAny<Category>())).ReturnsAsync(true);
 
-        var result = await _controller.Edit(1, category);
+        var result = await _controller.Edit(1, model);
 
-        var redirect = Assert.IsType<RedirectToActionResult>(result);
+        Assert.IsType<RedirectToActionResult>(result);
 
-        Assert.Equal("Index", redirect.ActionName);
+        _mock.Verify(x => x.UpdateAsync(
+            It.Is<Category>(c =>
+                c.Id == model.Id &&
+                c.Name == model.Name &&
+                c.Description == model.Description)),
+            Times.Once);
     }
 
     [Fact]
-    public async Task EditPost_NonExistingCategory_ReturnsNotFound()
+    public async Task EditPost_Missing_ReturnsNotFound()
     {
-        var category = new Category
-        {
-            Id = 999,
-            Name = "Test"
-        };
+        _mock.Setup(x => x.UpdateAsync(
+            It.IsAny<Category>())).ReturnsAsync(false);
 
-        _serviceMock.Setup(s => s.UpdateAsync(category))
-            .ReturnsAsync(false);
-
-        var result = await _controller.Edit(999, category);
+        var result = await _controller.Edit(1, Form());
 
         Assert.IsType<NotFoundResult>(result);
     }
 
     [Fact]
-    public async Task EditPost_InvalidModel_ReturnsView()
+    public async Task EditPost_Invalid_ReturnsForm()
     {
-        var category = new Category
-        {
-            Id = 1,
-            Name = ""
-        };
+        var model = Form();
 
         _controller.ModelState.AddModelError(
-            "Name", "Name is required.");
+            "Name", "Required");
 
-        var result = await _controller.Edit(1, category);
+        var result = await _controller.Edit(1, model);
 
-        var view = Assert.IsType<ViewResult>(result);
+        Assert.Same(model,
+            Assert.IsType<ViewResult>(result).Model);
 
-        Assert.Same(category, view.Model);
-
-        _serviceMock.Verify(
-            s => s.UpdateAsync(It.IsAny<Category>()),
-            Times.Never);
+        _mock.Verify(x => x.UpdateAsync(
+            It.IsAny<Category>()), Times.Never);
     }
 
     [Fact]
-    public async Task EditPost_ServiceThrows_ReturnsViewWithError()
+    public async Task EditPost_ServiceThrows_ReturnsError()
     {
-        var category = new Category
-        {
-            Id = 1,
-            Name = "Test"
-        };
+        _mock.Setup(x => x.UpdateAsync(
+            It.IsAny<Category>()))
+            .ThrowsAsync(new ArgumentException("Invalid name"));
 
-        _serviceMock.Setup(s => s.UpdateAsync(category))
-            .ThrowsAsync(new ArgumentException("Invalid category."));
-
-        var result = await _controller.Edit(1, category);
+        var result = await _controller.Edit(1, Form());
 
         Assert.IsType<ViewResult>(result);
         Assert.False(_controller.ModelState.IsValid);
     }
 
     [Fact]
-    public async Task DeleteGet_ExistingCategory_ReturnsView()
+    public async Task DeleteGet_Existing_ReturnsView()
     {
-        var category = new Category
-        {
-            Id = 1,
-            Name = "Electronics"
-        };
+        var category = Entity();
 
-        _serviceMock.Setup(s => s.GetByIdAsync(1))
+        _mock.Setup(x => x.GetByIdAsync(1))
             .ReturnsAsync(category);
 
         var result = await _controller.Delete(1);
 
-        var view = Assert.IsType<ViewResult>(result);
-
-        Assert.Same(category, view.Model);
+        Assert.Same(category,
+            Assert.IsType<ViewResult>(result).Model);
     }
 
     [Fact]
-    public async Task DeleteGet_NonExistingCategory_ReturnsNotFound()
+    public async Task DeleteGet_Missing_ReturnsNotFound()
     {
-        _serviceMock.Setup(s => s.GetByIdAsync(999))
-            .ReturnsAsync((Category?)null);
-
         var result = await _controller.Delete(999);
-
         Assert.IsType<NotFoundResult>(result);
     }
 
     [Fact]
-    public async Task DeleteConfirmed_Success_RedirectsToIndex()
+    public async Task DeleteConfirmed_Success_Redirects()
     {
-        _serviceMock.Setup(s => s.DeleteAsync(1))
+        _mock.Setup(x => x.DeleteAsync(1))
             .ReturnsAsync(true);
 
         var result = await _controller.DeleteConfirmed(1);
 
-        var redirect = Assert.IsType<RedirectToActionResult>(result);
-
-        Assert.Equal("Index", redirect.ActionName);
-
-        _serviceMock.Verify(
-            s => s.DeleteAsync(1),
-            Times.Once);
+        Assert.IsType<RedirectToActionResult>(result);
+        _mock.Verify(x => x.DeleteAsync(1), Times.Once);
     }
 
     [Fact]
-    public async Task DeleteConfirmed_CategoryWithProducts_ReturnsViewWithError()
+    public async Task DeleteConfirmed_WithProducts_ReturnsError()
     {
-        var category = new Category
-        {
-            Id = 1,
-            Name = "Electronics"
-        };
+        var category = Entity();
 
-        _serviceMock.Setup(s => s.DeleteAsync(1))
+        _mock.Setup(x => x.DeleteAsync(1))
             .ReturnsAsync(false);
 
-        _serviceMock.Setup(s => s.GetByIdAsync(1))
+        _mock.Setup(x => x.GetByIdAsync(1))
             .ReturnsAsync(category);
 
         var result = await _controller.DeleteConfirmed(1);
@@ -328,14 +278,8 @@ public class CategoriesControllerTests
     }
 
     [Fact]
-    public async Task DeleteConfirmed_NonExistingCategory_ReturnsNotFound()
+    public async Task DeleteConfirmed_Missing_ReturnsNotFound()
     {
-        _serviceMock.Setup(s => s.DeleteAsync(999))
-            .ReturnsAsync(false);
-
-        _serviceMock.Setup(s => s.GetByIdAsync(999))
-            .ReturnsAsync((Category?)null);
-
         var result = await _controller.DeleteConfirmed(999);
 
         Assert.IsType<NotFoundResult>(result);

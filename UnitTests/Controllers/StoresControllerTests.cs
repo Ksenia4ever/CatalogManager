@@ -2,6 +2,7 @@
 using CatalogManager.Application.Interfaces;
 using CatalogManager.Controllers;
 using CatalogManager.Domain.Entities;
+using CatalogManager.Models;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 
@@ -9,16 +10,24 @@ namespace CatalogManager.UnitTests.Controllers;
 
 public class StoresControllerTests
 {
-    private readonly Mock<IStoreService> _serviceMock;
+    private readonly Mock<IStoreService> _mock = new();
     private readonly StoresController _controller;
 
     public StoresControllerTests()
     {
-        _serviceMock = new Mock<IStoreService>();
-        _controller = new StoresController(_serviceMock.Object);
+        _controller = new StoresController(_mock.Object);
     }
 
-    private static Store CreateStore() => new()
+    private static Store Entity() => new()
+    {
+        Id = 1,
+        Name = "Tech Store",
+        Address = "Kyiv",
+        Latitude = 50.4501,
+        Longitude = 30.5234
+    };
+
+    private static StoreFormViewModel Form() => new()
     {
         Id = 1,
         Name = "Tech Store",
@@ -30,102 +39,110 @@ public class StoresControllerTests
     [Fact]
     public async Task Index_ReturnsStores()
     {
-        var stores = new List<Store> { CreateStore() };
+        var stores = new List<Store> { Entity() };
 
-        _serviceMock.Setup(s => s.GetAllAsync())
+        _mock.Setup(x => x.GetAllAsync())
             .ReturnsAsync(stores);
 
         var result = await _controller.Index();
 
-        var view = Assert.IsType<ViewResult>(result);
-        Assert.Same(stores, view.Model);
-        _serviceMock.Verify(s => s.GetAllAsync(), Times.Once);
+        Assert.Same(stores,
+            Assert.IsType<ViewResult>(result).Model);
+
+        _mock.Verify(x => x.GetAllAsync(), Times.Once);
     }
 
     [Fact]
-    public async Task Index_EmptyList_ReturnsView()
+    public async Task Index_Empty_ReturnsEmptyList()
     {
-        _serviceMock.Setup(s => s.GetAllAsync())
+        _mock.Setup(x => x.GetAllAsync())
             .ReturnsAsync(new List<Store>());
 
         var result = await _controller.Index();
 
-        var view = Assert.IsType<ViewResult>(result);
-        Assert.Empty(Assert.IsType<List<Store>>(view.Model));
+        Assert.Empty(
+            Assert.IsType<List<Store>>(
+                Assert.IsType<ViewResult>(result).Model));
     }
 
     [Fact]
-    public async Task Details_ExistingStore_ReturnsView()
+    public async Task Details_Existing_ReturnsView()
     {
-        var store = CreateStore();
+        var store = Entity();
 
-        _serviceMock.Setup(s => s.GetByIdAsync(1))
+        _mock.Setup(x => x.GetByIdAsync(1))
             .ReturnsAsync(store);
 
         var result = await _controller.Details(1);
 
-        var view = Assert.IsType<ViewResult>(result);
-        Assert.Same(store, view.Model);
+        Assert.Same(store,
+            Assert.IsType<ViewResult>(result).Model);
     }
 
     [Fact]
-    public async Task Details_MissingStore_ReturnsNotFound()
+    public async Task Details_Missing_ReturnsNotFound()
     {
         var result = await _controller.Details(999);
         Assert.IsType<NotFoundResult>(result);
     }
 
     [Fact]
-    public void CreateGet_ReturnsView()
+    public void CreateGet_ReturnsForm()
     {
-        Assert.IsType<ViewResult>(_controller.Create());
+        var result = _controller.Create();
+
+        Assert.IsType<StoreFormViewModel>(
+            Assert.IsType<ViewResult>(result).Model);
     }
 
     [Fact]
-    public async Task CreatePost_ValidStore_Redirects()
+    public async Task CreatePost_Valid_Redirects()
     {
-        var store = CreateStore();
+        var model = Form();
 
-        var result = await _controller.Create(store);
+        var result = await _controller.Create(model);
 
-        var redirect =
-            Assert.IsType<RedirectToActionResult>(result);
+        Assert.IsType<RedirectToActionResult>(result);
 
-        Assert.Equal("Index", redirect.ActionName);
-
-        _serviceMock.Verify(
-            s => s.CreateAsync(store), Times.Once);
+        _mock.Verify(x => x.CreateAsync(
+            It.Is<Store>(s =>
+                s.Id == 0 &&
+                s.Name == model.Name &&
+                s.Address == model.Address &&
+                s.Latitude == model.Latitude &&
+                s.Longitude == model.Longitude)),
+            Times.Once);
     }
 
     [Fact]
-    public async Task CreatePost_InvalidModel_ReturnsView()
+    public async Task CreatePost_Invalid_ReturnsForm()
     {
-        var store = CreateStore();
+        var model = Form();
 
         _controller.ModelState.AddModelError(
-            "Name", "Name is required");
+            "Name", "Required");
 
-        var result = await _controller.Create(store);
+        var result = await _controller.Create(model);
 
-        var view = Assert.IsType<ViewResult>(result);
-        Assert.Same(store, view.Model);
+        Assert.Same(model,
+            Assert.IsType<ViewResult>(result).Model);
 
-        _serviceMock.Verify(
-            s => s.CreateAsync(It.IsAny<Store>()),
-            Times.Never);
+        _mock.Verify(x => x.CreateAsync(
+            It.IsAny<Store>()), Times.Never);
     }
 
     [Fact]
     public async Task CreatePost_InvalidCoordinates_ReturnsError()
     {
-        var store = CreateStore();
-        store.Latitude = 100;
+        var model = Form();
+        model.Latitude = 100;
 
-        _serviceMock.Setup(s => s.CreateAsync(store))
+        _mock.Setup(x => x.CreateAsync(
+            It.IsAny<Store>()))
             .ThrowsAsync(new ArgumentException(
-                "Invalid latitude."));
+                "Invalid latitude"));
 
-        var result = await _controller.Create(store);
+        var result = await _controller.Create(model);
 
         Assert.IsType<ViewResult>(result);
         Assert.False(_controller.ModelState.IsValid);
@@ -134,35 +151,40 @@ public class StoresControllerTests
     [Fact]
     public async Task CreatePost_InvalidAddress_ReturnsError()
     {
-        var store = CreateStore();
-        store.Address = "";
+        var model = Form();
+        model.Address = "";
 
-        _serviceMock.Setup(s => s.CreateAsync(store))
+        _mock.Setup(x => x.CreateAsync(
+            It.IsAny<Store>()))
             .ThrowsAsync(new ArgumentException(
-                "Store address is required."));
+                "Address is required"));
 
-        var result = await _controller.Create(store);
+        var result = await _controller.Create(model);
 
         Assert.IsType<ViewResult>(result);
         Assert.False(_controller.ModelState.IsValid);
     }
 
     [Fact]
-    public async Task EditGet_ExistingStore_ReturnsView()
+    public async Task EditGet_Existing_ReturnsForm()
     {
-        var store = CreateStore();
-
-        _serviceMock.Setup(s => s.GetByIdAsync(1))
-            .ReturnsAsync(store);
+        _mock.Setup(x => x.GetByIdAsync(1))
+            .ReturnsAsync(Entity());
 
         var result = await _controller.Edit(1);
 
-        var view = Assert.IsType<ViewResult>(result);
-        Assert.Same(store, view.Model);
+        var model = Assert.IsType<StoreFormViewModel>(
+            Assert.IsType<ViewResult>(result).Model);
+
+        Assert.Equal(1, model.Id);
+        Assert.Equal("Tech Store", model.Name);
+        Assert.Equal("Kyiv", model.Address);
+        Assert.Equal(50.4501, model.Latitude);
+        Assert.Equal(30.5234, model.Longitude);
     }
 
     [Fact]
-    public async Task EditGet_MissingStore_ReturnsNotFound()
+    public async Task EditGet_Missing_ReturnsNotFound()
     {
         var result = await _controller.Edit(999);
         Assert.IsType<NotFoundResult>(result);
@@ -171,126 +193,121 @@ public class StoresControllerTests
     [Fact]
     public async Task EditPost_DifferentIds_ReturnsBadRequest()
     {
-        var store = CreateStore();
-
-        var result = await _controller.Edit(2, store);
+        var result = await _controller.Edit(2, Form());
 
         Assert.IsType<BadRequestResult>(result);
 
-        _serviceMock.Verify(
-            s => s.UpdateAsync(It.IsAny<Store>()),
-            Times.Never);
+        _mock.Verify(x => x.UpdateAsync(
+            It.IsAny<Store>()), Times.Never);
     }
 
     [Fact]
-    public async Task EditPost_ValidStore_Redirects()
+    public async Task EditPost_Valid_Redirects()
     {
-        var store = CreateStore();
+        var model = Form();
 
-        _serviceMock.Setup(s => s.UpdateAsync(store))
-            .ReturnsAsync(true);
+        _mock.Setup(x => x.UpdateAsync(
+            It.IsAny<Store>())).ReturnsAsync(true);
 
-        var result = await _controller.Edit(1, store);
+        var result = await _controller.Edit(1, model);
 
-        var redirect =
-            Assert.IsType<RedirectToActionResult>(result);
+        Assert.IsType<RedirectToActionResult>(result);
 
-        Assert.Equal("Index", redirect.ActionName);
-        _serviceMock.Verify(
-            s => s.UpdateAsync(store), Times.Once);
+        _mock.Verify(x => x.UpdateAsync(
+            It.Is<Store>(s =>
+                s.Id == model.Id &&
+                s.Name == model.Name &&
+                s.Address == model.Address &&
+                s.Latitude == model.Latitude &&
+                s.Longitude == model.Longitude)),
+            Times.Once);
     }
 
     [Fact]
-    public async Task EditPost_MissingStore_ReturnsNotFound()
+    public async Task EditPost_Missing_ReturnsNotFound()
     {
-        var store = CreateStore();
+        _mock.Setup(x => x.UpdateAsync(
+            It.IsAny<Store>())).ReturnsAsync(false);
 
-        _serviceMock.Setup(s => s.UpdateAsync(store))
-            .ReturnsAsync(false);
-
-        var result = await _controller.Edit(1, store);
+        var result = await _controller.Edit(1, Form());
 
         Assert.IsType<NotFoundResult>(result);
     }
 
     [Fact]
-    public async Task EditPost_InvalidModel_ReturnsView()
+    public async Task EditPost_Invalid_ReturnsForm()
     {
-        var store = CreateStore();
+        var model = Form();
 
         _controller.ModelState.AddModelError(
-            "Address", "Address is required");
+            "Address", "Required");
 
-        var result = await _controller.Edit(1, store);
+        var result = await _controller.Edit(1, model);
 
-        Assert.IsType<ViewResult>(result);
+        Assert.Same(model,
+            Assert.IsType<ViewResult>(result).Model);
 
-        _serviceMock.Verify(
-            s => s.UpdateAsync(It.IsAny<Store>()),
-            Times.Never);
+        _mock.Verify(x => x.UpdateAsync(
+            It.IsAny<Store>()), Times.Never);
     }
 
     [Fact]
     public async Task EditPost_ServiceThrows_ReturnsError()
     {
-        var store = CreateStore();
-
-        _serviceMock.Setup(s => s.UpdateAsync(store))
+        _mock.Setup(x => x.UpdateAsync(
+            It.IsAny<Store>()))
             .ThrowsAsync(new ArgumentException(
-                "Invalid longitude."));
+                "Invalid longitude"));
 
-        var result = await _controller.Edit(1, store);
+        var result = await _controller.Edit(1, Form());
 
         Assert.IsType<ViewResult>(result);
         Assert.False(_controller.ModelState.IsValid);
     }
 
     [Fact]
-    public async Task DeleteGet_ExistingStore_ReturnsView()
+    public async Task DeleteGet_Existing_ReturnsView()
     {
-        var store = CreateStore();
+        var store = Entity();
 
-        _serviceMock.Setup(s => s.GetByIdAsync(1))
+        _mock.Setup(x => x.GetByIdAsync(1))
             .ReturnsAsync(store);
 
         var result = await _controller.Delete(1);
 
-        var view = Assert.IsType<ViewResult>(result);
-        Assert.Same(store, view.Model);
+        Assert.Same(store,
+            Assert.IsType<ViewResult>(result).Model);
     }
 
     [Fact]
-    public async Task DeleteGet_MissingStore_ReturnsNotFound()
+    public async Task DeleteGet_Missing_ReturnsNotFound()
     {
         var result = await _controller.Delete(999);
+
         Assert.IsType<NotFoundResult>(result);
     }
 
     [Fact]
     public async Task DeleteConfirmed_Success_Redirects()
     {
-        _serviceMock.Setup(s => s.DeleteAsync(1))
+        _mock.Setup(x => x.DeleteAsync(1))
             .ReturnsAsync(true);
 
         var result = await _controller.DeleteConfirmed(1);
 
-        var redirect =
-            Assert.IsType<RedirectToActionResult>(result);
-
-        Assert.Equal("Index", redirect.ActionName);
-        _serviceMock.Verify(
-            s => s.DeleteAsync(1), Times.Once);
+        Assert.IsType<RedirectToActionResult>(result);
+        _mock.Verify(x => x.DeleteAsync(1), Times.Once);
     }
 
     [Fact]
     public async Task DeleteConfirmed_WithProducts_ReturnsError()
     {
-        var store = CreateStore();
+        var store = Entity();
 
-        _serviceMock.Setup(s => s.DeleteAsync(1))
+        _mock.Setup(x => x.DeleteAsync(1))
             .ReturnsAsync(false);
 
-        _serviceMock.Setup(s => s.GetByIdAsync(1))
+        _mock.Setup(x => x.GetByIdAsync(1))
             .ReturnsAsync(store);
 
         var result = await _controller.DeleteConfirmed(1);
@@ -303,9 +320,10 @@ public class StoresControllerTests
     }
 
     [Fact]
-    public async Task DeleteConfirmed_MissingStore_ReturnsNotFound()
+    public async Task DeleteConfirmed_Missing_ReturnsNotFound()
     {
         var result = await _controller.DeleteConfirmed(999);
+
         Assert.IsType<NotFoundResult>(result);
     }
 }

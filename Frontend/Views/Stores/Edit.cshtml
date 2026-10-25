@@ -1,5 +1,4 @@
-﻿
-@model CatalogManager.Domain.Entities.Store
+﻿@model CatalogManager.Models.StoreFormViewModel
 
 @{
     ViewData["Title"] = "Edit Store";
@@ -7,42 +6,52 @@
 
 <h1>Edit Store</h1>
 
-<form asp-action="Edit" asp-route-id="@Model.Id" method="post">
+<form asp-action="Edit"
+      asp-route-id="@Model.Id"
+      method="post">
+
     <input type="hidden" asp-for="Id" />
 
-    <div asp-validation-summary="All" class="text-danger"></div>
+    <div asp-validation-summary="All"
+         class="text-danger"></div>
 
     <div class="mb-3">
         <label asp-for="Name" class="form-label"></label>
         <input asp-for="Name" class="form-control" />
-        <span asp-validation-for="Name" class="text-danger"></span>
+        <span asp-validation-for="Name"
+              class="text-danger"></span>
     </div>
 
     <div class="mb-3">
         <label asp-for="Address" class="form-label"></label>
         <input asp-for="Address" class="form-control" />
-        <span asp-validation-for="Address" class="text-danger"></span>
+        <span asp-validation-for="Address"
+              class="text-danger"></span>
     </div>
 
     <div class="mb-3">
         <label asp-for="Latitude" class="form-label"></label>
         <input asp-for="Latitude" class="form-control"
                type="number" step="any" />
-        <span asp-validation-for="Latitude" class="text-danger"></span>
+        <span asp-validation-for="Latitude"
+              class="text-danger"></span>
     </div>
 
     <div class="mb-3">
         <label asp-for="Longitude" class="form-label"></label>
         <input asp-for="Longitude" class="form-control"
                type="number" step="any" />
-        <span asp-validation-for="Longitude" class="text-danger"></span>
+        <span asp-validation-for="Longitude"
+              class="text-danger"></span>
     </div>
 
     <button type="submit" class="btn btn-success">
         Save Changes
     </button>
 
-    <a asp-action="Index" class="btn btn-secondary">Back</a>
+    <a asp-action="Index" class="btn btn-secondary">
+        Back
+    </a>
 </form>
 
 @section Scripts {

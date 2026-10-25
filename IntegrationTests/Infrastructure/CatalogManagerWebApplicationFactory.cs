@@ -17,11 +17,30 @@ public class CatalogManagerWebApplicationFactory
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        // Указываем актуальную папку MVC-проекта.
+        // Раньше она называлась CatalogManager,
+        // теперь она называется Frontend.
+        var solutionDirectory = Path.GetFullPath(
+            Path.Combine(
+                AppContext.BaseDirectory,
+                "..", "..", "..", ".."));
+
+        var frontendDirectory = Path.Combine(
+            solutionDirectory, "Frontend");
+
+        if (!Directory.Exists(frontendDirectory))
+        {
+            throw new DirectoryNotFoundException(
+                $"Frontend project directory not found: {frontendDirectory}");
+        }
+
+        builder.UseContentRoot(frontendDirectory);
+
         builder.UseEnvironment("Testing");
 
+        // Загружаем строку подключения из User Secrets.
         var configuration = new ConfigurationBuilder()
-            .AddUserSecrets<
-                CatalogManagerWebApplicationFactory>()
+            .AddUserSecrets<CatalogManagerWebApplicationFactory>()
             .Build();
 
         _testConnectionString = configuration
@@ -33,6 +52,7 @@ public class CatalogManagerWebApplicationFactory
                 "TestConnection is not configured in User Secrets.");
         }
 
+        // Проверяем, что тесты используют отдельную БД.
         var connectionBuilder =
             new NpgsqlConnectionStringBuilder(
                 _testConnectionString);
@@ -46,6 +66,8 @@ public class CatalogManagerWebApplicationFactory
                 "Integration tests must use CatalogManagerTestDb.");
         }
 
+        // Заменяем основное подключение PostgreSQL
+        // подключением к тестовой базе данных.
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<

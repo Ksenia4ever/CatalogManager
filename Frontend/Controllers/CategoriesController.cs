@@ -1,31 +1,29 @@
 ﻿
 using CatalogManager.Application.Interfaces;
 using CatalogManager.Domain.Entities;
+using CatalogManager.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CatalogManager.Controllers;
 
 public class CategoriesController : Controller
 {
-    private readonly ICategoryService _categoryService;
+    private readonly ICategoryService _service;
 
-    public CategoriesController(ICategoryService categoryService)
+    public CategoriesController(ICategoryService service)
     {
-        _categoryService = categoryService;
+        _service = service;
     }
 
-    // GET: /Categories
     public async Task<IActionResult> Index()
     {
-        var categories = await _categoryService.GetAllAsync();
-
+        var categories = await _service.GetAllAsync();
         return View(categories);
     }
 
-    // GET: /Categories/Details/5
     public async Task<IActionResult> Details(int id)
     {
-        var category = await _categoryService.GetByIdAsync(id);
+        var category = await _service.GetByIdAsync(id);
 
         if (category == null)
             return NotFound();
@@ -33,62 +31,79 @@ public class CategoriesController : Controller
         return View(category);
     }
 
-    // GET: /Categories/Create
+    // GET: Categories/Create
     public IActionResult Create()
     {
-        return View();
+        return View(new CategoryFormViewModel());
     }
 
-    // POST: /Categories/Create
+    // POST: Categories/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(Category category)
+    public async Task<IActionResult> Create(CategoryFormViewModel model)
     {
-        ModelState.Remove(nameof(Category.Products));
-
         if (!ModelState.IsValid)
-            return View(category);
+            return View(model);
 
         try
         {
-            await _categoryService.CreateAsync(category);
+            var category = new Category
+            {
+                Name = model.Name,
+                Description = model.Description
+            };
+
+            await _service.CreateAsync(category);
 
             return RedirectToAction(nameof(Index));
         }
         catch (ArgumentException ex)
         {
-            ModelState.AddModelError(nameof(Category.Name), ex.Message);
-            return View(category);
+            ModelState.AddModelError(string.Empty, ex.Message);
+            return View(model);
         }
     }
 
-    // GET: /Categories/Edit/5
+    // GET: Categories/Edit/5
     public async Task<IActionResult> Edit(int id)
     {
-        var category = await _categoryService.GetByIdAsync(id);
+        var category = await _service.GetByIdAsync(id);
 
         if (category == null)
             return NotFound();
 
-        return View(category);
+        var model = new CategoryFormViewModel
+        {
+            Id = category.Id,
+            Name = category.Name,
+            Description = category.Description
+        };
+
+        return View(model);
     }
 
-    // POST: /Categories/Edit/5
+    // POST: Categories/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, Category category)
+    public async Task<IActionResult> Edit(
+        int id, CategoryFormViewModel model)
     {
-        if (id != category.Id)
+        if (id != model.Id)
             return BadRequest();
 
-        ModelState.Remove(nameof(Category.Products));
-
         if (!ModelState.IsValid)
-            return View(category);
+            return View(model);
 
         try
         {
-            var updated = await _categoryService.UpdateAsync(category);
+            var category = new Category
+            {
+                Id = model.Id,
+                Name = model.Name,
+                Description = model.Description
+            };
+
+            var updated = await _service.UpdateAsync(category);
 
             if (!updated)
                 return NotFound();
@@ -97,15 +112,15 @@ public class CategoriesController : Controller
         }
         catch (ArgumentException ex)
         {
-            ModelState.AddModelError(nameof(Category.Name), ex.Message);
-            return View(category);
+            ModelState.AddModelError(string.Empty, ex.Message);
+            return View(model);
         }
     }
 
-    // GET: /Categories/Delete/5
+    // GET: Categories/Delete/5
     public async Task<IActionResult> Delete(int id)
     {
-        var category = await _categoryService.GetByIdAsync(id);
+        var category = await _service.GetByIdAsync(id);
 
         if (category == null)
             return NotFound();
@@ -113,27 +128,25 @@ public class CategoriesController : Controller
         return View(category);
     }
 
-    // POST: /Categories/Delete/5
+    // POST: Categories/Delete/5
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        var deleted = await _categoryService.DeleteAsync(id);
+        var deleted = await _service.DeleteAsync(id);
 
-        if (!deleted)
-        {
-            var category = await _categoryService.GetByIdAsync(id);
+        if (deleted)
+            return RedirectToAction(nameof(Index));
 
-            if (category == null)
-                return NotFound();
+        var category = await _service.GetByIdAsync(id);
 
-            ModelState.AddModelError(
-                string.Empty,
-                "Cannot delete a category that contains products.");
+        if (category == null)
+            return NotFound();
 
-            return View("Delete", category);
-        }
+        ModelState.AddModelError(
+            string.Empty,
+            "Cannot delete a category that contains products.");
 
-        return RedirectToAction(nameof(Index));
+        return View("Delete", category);
     }
 }
