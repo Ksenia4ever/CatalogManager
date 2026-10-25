@@ -1,0 +1,60 @@
+﻿
+@model IEnumerable<CatalogManager.Domain.Entities.Product>
+
+@{
+    ViewData["Title"] = "Products";
+}
+
+<h1>Products</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">
+        Add Product
+    </a>
+</p>
+
+<table class="table table-striped align-middle">
+    <thead>
+        <tr>
+            <th>Image</th>
+            <th>Name</th>
+            <th>Price</th>
+            <th>Category</th>
+            <th>Store</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var product in Model)
+        {
+            <tr>
+                <td>
+                    @if (!string.IsNullOrWhiteSpace(product.ImageUrl))
+                    {
+                        <img src="@product.ImageUrl"
+                             alt="@product.Name"
+                             width="70"
+                             style="max-height:70px;object-fit:contain" />
+                    }
+                </td>
+                <td>@product.Name</td>
+                <td>@product.Price.ToString("N2")</td>
+                <td>@product.Category?.Name</td>
+                <td>@product.Store?.Name</td>
+                <td>
+                    <a asp-action="Details"
+                       asp-route-id="@product.Id"
+                       class="btn btn-info btn-sm">Details</a>
+
+                    <a asp-action="Edit"
+                       asp-route-id="@product.Id"
+                       class="btn btn-warning btn-sm">Edit</a>
+
+                    <a asp-action="Delete"
+                       asp-route-id="@product.Id"
+                       class="btn btn-danger btn-sm">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

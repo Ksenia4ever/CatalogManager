@@ -1,0 +1,30 @@
+﻿
+@model CatalogManager.Domain.Entities.Store
+
+@{
+    ViewData["Title"] = "Store Details";
+}
+
+<h1>Store Details</h1>
+
+<dl class="row">
+    <dt class="col-sm-3">ID</dt>
+    <dd class="col-sm-9">@Model.Id</dd>
+
+    <dt class="col-sm-3">Name</dt>
+    <dd class="col-sm-9">@Model.Name</dd>
+
+    <dt class="col-sm-3">Address</dt>
+    <dd class="col-sm-9">@Model.Address</dd>
+
+    <dt class="col-sm-3">Latitude</dt>
+    <dd class="col-sm-9">@Model.Latitude</dd>
+
+    <dt class="col-sm-3">Longitude</dt>
+    <dd class="col-sm-9">@Model.Longitude</dd>
+</dl>
+
+<a asp-action="Edit" asp-route-id="@Model.Id"
+   class="btn btn-warning">Edit</a>
+
+<a asp-action="Index" class="btn btn-secondary">Back</a>
