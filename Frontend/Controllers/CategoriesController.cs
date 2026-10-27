@@ -1,5 +1,5 @@
-﻿
-using CatalogManager.Application.Interfaces;
+﻿using CatalogManager.Application.Interfaces;
+using CatalogManager.Application.Exceptions;
 using CatalogManager.Domain.Entities;
 using CatalogManager.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -18,6 +18,7 @@ public class CategoriesController : Controller
     public async Task<IActionResult> Index()
     {
         var categories = await _service.GetAllAsync();
+
         return View(categories);
     }
 
@@ -40,7 +41,8 @@ public class CategoriesController : Controller
     // POST: Categories/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(CategoryFormViewModel model)
+    public async Task<IActionResult> Create(
+        CategoryFormViewModel model)
     {
         if (!ModelState.IsValid)
             return View(model);
@@ -57,9 +59,18 @@ public class CategoriesController : Controller
 
             return RedirectToAction(nameof(Index));
         }
+        catch (DuplicateCategoryNameException ex)
+        {
+            ModelState.AddModelError(
+                nameof(model.Name), ex.Message);
+
+            return View(model);
+        }
         catch (ArgumentException ex)
         {
-            ModelState.AddModelError(string.Empty, ex.Message);
+            ModelState.AddModelError(
+                string.Empty, ex.Message);
+
             return View(model);
         }
     }
@@ -103,16 +114,26 @@ public class CategoriesController : Controller
                 Description = model.Description
             };
 
-            var updated = await _service.UpdateAsync(category);
+            var updated =
+                await _service.UpdateAsync(category);
 
             if (!updated)
                 return NotFound();
 
             return RedirectToAction(nameof(Index));
         }
+        catch (DuplicateCategoryNameException ex)
+        {
+            ModelState.AddModelError(
+                nameof(model.Name), ex.Message);
+
+            return View(model);
+        }
         catch (ArgumentException ex)
         {
-            ModelState.AddModelError(string.Empty, ex.Message);
+            ModelState.AddModelError(
+                string.Empty, ex.Message);
+
             return View(model);
         }
     }
