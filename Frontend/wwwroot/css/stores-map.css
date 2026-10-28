@@ -1,0 +1,40 @@
+﻿#storesMap {
+    height: 520px;
+    min-height: 360px;
+    width: 100%;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background: #f5f7fa;
+}
+
+.stores-map-toolbar {
+    margin-bottom: 16px;
+}
+
+.stores-map-controls {
+    display: flex;
+    gap: 10px;
+}
+
+    .stores-map-controls input {
+        max-width: 420px;
+    }
+
+.stores-map-status {
+    margin: 10px 0 0;
+    color: #555;
+}
+
+@media (max-width: 600px) {
+    .stores-map-controls {
+        flex-direction: column;
+    }
+
+        .stores-map-controls input {
+            max-width: 100%;
+        }
+
+    #storesMap {
+        height: 420px;
+    }
+}

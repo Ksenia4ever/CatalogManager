@@ -1,0 +1,30 @@
+﻿@{
+    ViewData["Title"] = "Stores Map";
+}
+
+<link rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      crossorigin="" />
+<link rel="stylesheet" href="~/css/stores-map.css" asp-append-version="true" />
+
+<h1>Stores Map</h1>
+<p>Explore stores from the CatalogManager API on OpenStreetMap.</p>
+
+<div class="stores-map-toolbar">
+    <label for="storeSearch" class="form-label">Search by store name</label>
+    <div class="stores-map-controls">
+        <input id="storeSearch" class="form-control" type="search"
+               placeholder="Enter store name..." autocomplete="off" />
+        <button id="refreshStores" class="btn btn-primary" type="button">Refresh</button>
+    </div>
+    <p id="mapStatus" class="stores-map-status" role="status" aria-live="polite">Loading stores...</p>
+</div>
+
+<div id="storesMap" aria-label="Interactive map of stores" role="region"></div>
+<p class="mt-2"><a asp-controller="Stores" asp-action="Index">Back to stores</a></p>
+
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            crossorigin=""></script>
+    <script src="~/js/stores-map.js" asp-append-version="true"></script>
+}

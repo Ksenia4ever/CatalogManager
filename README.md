@@ -8,6 +8,8 @@ The project was developed for the **Web Technologies** coursework:
 - **C1 — MVC Application:** CRUD for three related entities with an optional product image URL.
 - **C5 — REST API:** JSON CRUD endpoints, DTOs, validation and HTTP status codes.
 - **QA1 — Automated Web API Testing:** repeatable Postman collection with positive and negative scenarios, dynamic IDs, assertions and cleanup.
+- **B1 — Pagination API:** offset pagination with `skip`, `limit`, and `nextLink` for collection endpoints.
+- **C8 — External API Integration:** interactive stores map powered by OpenStreetMap and Leaflet.
 
 ## Features
 
@@ -18,6 +20,8 @@ The project was developed for the **Web Technologies** coursework:
 - **Deletion rules:** categories and stores cannot be deleted while referenced by products.
 - **MVC interface:** Razor Views, Bootstrap, form ViewModels and antiforgery protection.
 - **REST API:** JSON endpoints for Categories, Stores and Products.
+- **Pagination:** offset-based pagination for API collection endpoints.
+- **Stores map:** interactive map, store markers, popups, name search, and Refresh without a full page reload.
 - **Testing:** xUnit/Moq, HTTP integration tests and an automated Postman collection.
 
 ## Technology Stack
@@ -26,6 +30,8 @@ The project was developed for the **Web Technologies** coursework:
 - Entity Framework Core 10; PostgreSQL and Npgsql
 - xUnit; Moq; ASP.NET Core `WebApplicationFactory`
 - Postman Collection Runner with JavaScript post-response assertions
+- OpenStreetMap tile service; Leaflet.js
+- HTML, CSS and JavaScript
 - Coverlet and ReportGenerator; Git and GitHub
 
 ## Solution Structure
@@ -39,6 +45,10 @@ CatalogManager/
 │   ├── Models/                # MVC form ViewModels
 │   ├── DTOs/                  # API request/response DTOs
 │   ├── Views/                 # Razor Views
+│   │   └── StoresMap/        # Interactive map page
+│   ├── wwwroot/
+│   │   ├── js/               # Map JavaScript
+│   │   └── css/              # Map styles
 │   └── Program.cs
 ├── Application/               # Services and interfaces
 ├── Domain/                    # Category, Store and Product entities
@@ -47,6 +57,7 @@ CatalogManager/
 ├── IntegrationTests/          # HTTP + PostgreSQL integration tests
 ├── Postman/
 │   └── CatalogManager_QA1_Automated.postman_collection.json
+├── B1_PAGINATION_GUIDE.md
 └── README.md
 ```
 
@@ -160,12 +171,191 @@ The numbers represent **Postman assertions**, not xUnit tests.
 
 The successful two-iteration run demonstrates that the automated test workflow can be repeated without manual ID replacement.
 
+## B1 — Pagination API
+
+### Overview
+
+B1 implements offset-based pagination for the existing REST API collection endpoints.
+
+Pagination allows API clients to request a limited number of records rather than retrieving the entire collection at once.
+
+### Supported Endpoints
+
+- `GET /api/categories`
+- `GET /api/stores`
+- `GET /api/products`
+
+### Query Parameters
+
+- `skip` — number of records to skip.
+- `limit` — maximum number of records to return.
+- `nextLink` — link to the next page when additional records are available.
+
+### Example
+
+```http
+GET /api/products?skip=0&limit=10
+```
+
+The API returns the requested page of products and provides navigation information for retrieving the next page.
+
+### Documentation
+
+Detailed implementation information, API examples, validation scenarios, and defense instructions are provided in:
+
+[B1_PAGINATION_GUIDE.md](B1_PAGINATION_GUIDE.md)
+
+## C8 — Interactive Stores Map (OpenStreetMap + Leaflet)
+
+### Overview
+
+C8 integrates an external mapping service into CatalogManager using **OpenStreetMap** and **Leaflet.js**.
+
+The application provides an interactive map at `/StoresMap`, displaying store locations based on geographic coordinates stored in the PostgreSQL database.
+
+Store information is loaded dynamically through the existing REST API endpoint:
+
+```http
+GET /api/stores
+```
+
+Unlike hard-coded maps, the displayed markers use actual store data retrieved from the application.
+
+### Implemented Features
+
+- **Interactive Map:** display an interactive map powered by OpenStreetMap and Leaflet.
+- **Store Markers:** visualize stores using their latitude and longitude coordinates.
+- **Store Popups:** display store information and a link to store details when clicking a marker.
+- **Client-Side Search:** filter markers by entering part of a store name.
+- **Dynamic Counter:** show the number of currently displayed stores.
+- **Refresh Functionality:** reload store information from the REST API without reloading the entire page.
+- **Invalid Coordinates Handling:** safely skip stores with missing or invalid coordinates.
+- **Navigation:** access the Stores Map page through the application menu.
+
+### Architecture
+
+The map functionality follows the existing layered architecture.
+
+```text
+Browser
+   |
+   v
+StoresMap MVC Page
+   |
+   v
+stores-map.js
+   |
+   v
+GET /api/stores
+   |
+   v
+StoresApiController
+   |
+   v
+Application Service
+   |
+   v
+Repository
+   |
+   v
+PostgreSQL
+```
+
+Leaflet.js renders the map and manages markers and popups.
+
+OpenStreetMap provides the geographic map tiles.
+
+### Implementation Files
+
+| File | Responsibility |
+|---|---|
+| `Frontend/Controllers/StoresMapController.cs` | MVC controller for the map page |
+| `Frontend/Views/StoresMap/Index.cshtml` | Map interface, search field and Refresh button |
+| `Frontend/wwwroot/js/stores-map.js` | Fetching API data, markers, popups, filtering and refresh |
+| `Frontend/wwwroot/css/stores-map.css` | Map styling |
+| `Frontend/Views/Shared/_Layout.cshtml` | Navigation link to Stores Map |
+| `IntegrationTests/Tests/StoresMapIntegrationTests.cs` | Integration tests for the map page and static resources |
+
+### How It Works
+
+1. The user opens `/StoresMap`.
+2. Leaflet initializes the interactive map.
+3. JavaScript sends an HTTP request to `GET /api/stores`.
+4. The REST API retrieves store data from PostgreSQL.
+5. The browser receives JSON containing store information and coordinates.
+6. Stores with valid geographic coordinates are displayed as map markers.
+7. Clicking a marker opens a popup with store details.
+8. The search input filters the visible markers.
+9. The Refresh button requests the latest data from the REST API.
+
+This implementation reuses the existing Stores REST API without requiring an additional database schema.
+
+### External Service Integration
+
+**OpenStreetMap** supplies the map tiles, while **Leaflet.js** is responsible for interactive map rendering and user interactions.
+
+The application does not require an external API key.
+
+No additional Entity Framework Core migrations are necessary.
+
+An internet connection is required to load OpenStreetMap tiles and externally hosted Leaflet resources.
+
+### Manual Verification
+
+1. Run the `Frontend` application.
+2. Open `/StoresMap` or select **Stores Map** from the navigation menu.
+3. Verify that the OpenStreetMap map loads successfully.
+4. Check that store markers appear at their saved coordinates.
+5. Click a marker and verify that its popup displays store information.
+6. Type part of a store name into the search field.
+7. Verify that only matching markers remain visible and the counter updates.
+8. Clear the search field and confirm that all matching stores return.
+9. Click **Refresh** and confirm that data reloads without refreshing the browser page.
+10. Open Postman and send `GET /api/stores`.
+11. Verify the `200 OK` response and the returned JSON data, including latitude and longitude.
+
+### Integration Tests
+
+C8 introduces `StoresMapIntegrationTests.cs`.
+
+The integration tests verify:
+
+- The `/StoresMap` MVC endpoint returns HTTP `200 OK`.
+- The HTML page contains the map container and search interface.
+- The page references the necessary JavaScript resources.
+- The map JavaScript file is accessible.
+- The map CSS file is accessible.
+
+The test class contains **three test cases**: one MVC page test and two parameterized static resource tests.
+
+### Verified Results
+
+The following functionality was manually verified:
+
+- Map rendering.
+- Store markers.
+- Marker popups.
+- Store name search.
+- Search reset.
+- Refresh functionality.
+- Store coordinates returned through Postman.
+
+Visual Studio Test Explorer confirmed:
+
+- **Total C# tests:** 263
+- **Passed:** 263
+- **Failed:** 0
+- **Skipped:** 0
+
+The successful test run includes the C8 integration tests and the previously implemented functionality.
+
 ## Requirements
 
 - .NET 10 SDK
 - Running PostgreSQL server
 - Visual Studio with ASP.NET/web development tools or a compatible editor
 - Postman for importing and running the automated QA1 collection
+- Internet access for OpenStreetMap and Leaflet resources
 - Optional: pgAdmin
 
 ## Local Setup
@@ -243,17 +433,19 @@ From the solution root:
 dotnet test CatalogManager.slnx
 ```
 
+Alternatively, use **Test → Test Explorer → Run All Tests** in Visual Studio.
+
 ### Last Confirmed C# Test Results
 
 | Test Type | Passed |
 |---|---:|
-| Unit Tests | 190 |
-| Integration Tests | 27 |
-| **Total** | **217** |
+| Unit Tests | 208 |
+| Integration Tests | 55 |
+| **Total** | **263** |
 
-**Result: 217 passed, 0 failed, 0 skipped.**
+**Result: 263 passed, 0 failed, 0 skipped.**
 
-This is the last confirmed Visual Studio Test Explorer result. Additional tests added afterward may change the current count.
+Verified in Visual Studio Test Explorer on **29 October 2026**, including the C8 map integration tests.
 
 These tests are separate from the **62/124 Postman assertions**.
 
@@ -287,7 +479,7 @@ The previously reviewed **pre-C5 report** showed:
 - **Branch coverage:** 77.7%.
 - **Application layer line coverage:** 100%.
 
-These numbers are not claimed as current C5 or QA1 coverage.
+These numbers are not claimed as current C5, QA1, B1, or C8 coverage.
 
 ## Security Notes
 
@@ -302,10 +494,8 @@ These numbers are not claimed as current C5 or QA1 coverage.
 
 - **C1 — MVC Application:** implemented; video defense recorded.
 - **C5 — REST API:** implemented, manually tested, and committed to GitHub.
-- **QA1 — Automated Web API Testing:** implemented; 62/62 assertions passed in one iteration and 124/124 in two iterations; a separate defense script has been prepared.
+- **QA1 — Automated Web API Testing:** implemented; 62/62 assertions passed in one iteration and 124/124 in two iterations.
+- **B1 — Pagination API:** implemented and verified.
+- **C8 — Interactive Stores Map:** implemented and manually verified; all 263 C# tests passed successfully.
 
 Future development may include containerization, caching, CI/CD, and other coursework stages.
-
-## B1 — Pagination API
-
-Offset pagination with `skip`, `limit`, and `nextLink` is implemented for all three REST API collections. Example: `GET /api/products?skip=0&limit=10`. Full details and defense steps: [B1_PAGINATION_GUIDE.md](B1_PAGINATION_GUIDE.md).

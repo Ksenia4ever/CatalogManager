@@ -1,5 +1,4 @@
-﻿
-@model IEnumerable<CatalogManager.Domain.Entities.Store>
+﻿@model IEnumerable<CatalogManager.Domain.Entities.Store>
 
 @{
     ViewData["Title"] = "Stores";
@@ -10,6 +9,9 @@
 <p>
     <a asp-action="Create" class="btn btn-primary">
         Add Store
+    </a>
+    <a asp-controller="StoresMap" asp-action="Index" class="btn btn-outline-primary ms-2">
+        View Stores Map
     </a>
 </p>
 
