@@ -1,4 +1,5 @@
-﻿using CatalogManager.Application.Interfaces;
+﻿using CatalogManager.Application.Models;
+using CatalogManager.Application.Interfaces;
 using CatalogManager.Application.Exceptions;
 using CatalogManager.Domain.Entities;
 
@@ -11,6 +12,11 @@ public class CategoryService : ICategoryService
     public CategoryService(ICategoryRepository repository)
     {
         _repository = repository;
+    }
+
+    public Task<PagedResult<Category>> GetPagedAsync(int skip, int limit)
+    {
+        return _repository.GetPagedAsync(skip, limit);
     }
 
     public async Task<List<Category>> GetAllAsync()

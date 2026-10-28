@@ -1,4 +1,4 @@
-﻿
+﻿using CatalogManager.Application.Models;
 using CatalogManager.Application.Interfaces;
 using CatalogManager.Domain.Entities;
 
@@ -11,6 +11,11 @@ public class StoreService : IStoreService
     public StoreService(IStoreRepository repository)
     {
         _repository = repository;
+    }
+
+    public Task<PagedResult<Store>> GetPagedAsync(int skip, int limit)
+    {
+        return _repository.GetPagedAsync(skip, limit);
     }
 
     public async Task<List<Store>> GetAllAsync()

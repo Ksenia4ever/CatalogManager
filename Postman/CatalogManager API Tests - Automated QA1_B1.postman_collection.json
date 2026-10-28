@@ -1,11 +1,11 @@
 {
   "info": {
-    "_postman_id": "70cc4e2d-5a45-4963-8d73-6c0a735c8d48",
-    "name": "CatalogManager API Tests - Automated QA1",
-    "description": "Self-contained collection run: Categories -> Stores -> Products -> Cleanup. Run all folders in order with one iteration. Requires local HTTPS CatalogManager server. Main CRUD requests use generated IDs; negative requests assert expected 400/409 statuses.",
+    "_postman_id": "e173a9c0-a52f-44f6-bb3c-5ea855dcebbb",
+    "name": "CatalogManager API Tests - Automated QA1 Copy",
+    "description": "Self-contained collection run: Categories -> Stores -> Products -> Cleanup. Run all folders in order with one iteration. Requires local HTTPS CatalogManager server. Main CRUD requests use generated IDs; negative requests assert expected 400/409 statuses.\nB1: pagination checks for categories, stores, products (skip/limit/nextLink), plus backward compatibility.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "54782030",
-    "_collection_link": "https://go.postman.co/collection/54782030-70cc4e2d-5a45-4963-8d73-6c0a735c8d48?source=collection_link"
+    "_collection_link": "https://go.postman.co/collection/54782030-e173a9c0-a52f-44f6-bb3c-5ea855dcebbb?source=collection_link"
   },
   "item": [
     {
@@ -1829,6 +1829,1053 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "B1 - Pagination",
+      "item": [
+        {
+          "name": "Categories | First page (skip=0, limit=2)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"PAGE: HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"PAGE: envelope and limits\", () => {",
+                  "  pm.expect(body.items).to.be.an(\"array\");",
+                  "  pm.expect(body.skip).to.eql(0);",
+                  "  pm.expect(body.limit).to.eql(2);",
+                  "  pm.expect(body.totalCount).to.be.a(\"number\").and.at.least(0);",
+                  "  pm.expect(body.items.length).to.be.at.most(2);",
+                  "});",
+                  "pm.test(\"PAGE: totalCount and nextLink consistent\", () => {",
+                  "  if (body.totalCount > 2) {",
+                  "    pm.expect(body.nextLink).to.be.a(\"string\");",
+                  "    const url = new URL(body.nextLink);",
+                  "    pm.expect(url.searchParams.get(\"skip\")).to.eql(\"2\");",
+                  "    pm.expect(url.searchParams.get(\"limit\")).to.eql(\"2\");",
+                  "  } else pm.expect(body.nextLink).to.be.null;",
+                  "});",
+                  "pm.test(\"PAGE: items sorted by id\", () => {",
+                  "  for (let i = 1; i < body.items.length; i++) pm.expect(body.items[i].id).to.be.above(body.items[i-1].id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories?skip=0&limit=2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "2"
+                }
+              ]
+            },
+            "description": "B1 Pagination API automatic checks. Read-only request."
+          },
+          "response": []
+        },
+        {
+          "name": "Categories | Second page (skip=2, limit=2)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"SECOND PAGE: HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"SECOND PAGE: correct offset and size\", () => {",
+                  "  pm.expect(body.skip).to.eql(2);",
+                  "  pm.expect(body.limit).to.eql(2);",
+                  "  pm.expect(body.items).to.be.an(\"array\");",
+                  "  pm.expect(body.items.length).to.be.at.most(2);",
+                  "  pm.expect(body.items.length).to.eql(Math.min(2,Math.max(0,body.totalCount-2)));",
+                  "});",
+                  "pm.test(\"SECOND PAGE: nextLink expected\", () => {",
+                  "  if (body.totalCount > 4) {",
+                  "    pm.expect(body.nextLink).to.be.a(\"string\");",
+                  "    pm.expect(new URL(body.nextLink).searchParams.get(\"skip\")).to.eql(\"4\");",
+                  "  } else pm.expect(body.nextLink).to.be.null;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories?skip=2&limit=2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "2"
+                },
+                {
+                  "key": "limit",
+                  "value": "2"
+                }
+              ]
+            },
+            "description": "B1 Pagination API automatic checks. Read-only request."
+          },
+          "response": []
+        },
+        {
+          "name": "Categories | Default limit (skip=0)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"DEFAULT LIMIT: HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"DEFAULT LIMIT: skip=0, limit=10\", () => {",
+                  "  pm.expect(body.items).to.be.an(\"array\");",
+                  "  pm.expect(body.skip).to.eql(0);",
+                  "  pm.expect(body.limit).to.eql(10);",
+                  "  pm.expect(body.items.length).to.be.at.most(10);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories?skip=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "B1 Pagination API automatic checks. Read-only request."
+          },
+          "response": []
+        },
+        {
+          "name": "Categories | Legacy C5 response",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"LEGACY C5: HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"LEGACY C5: still a JSON array\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            },
+            "description": "B1 Pagination API automatic checks. Read-only request."
+          },
+          "response": []
+        },
+        {
+          "name": "Categories | Invalid negative skip",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Invalid pagination: HTTP 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories?skip=-1&limit=2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "-1"
+                },
+                {
+                  "key": "limit",
+                  "value": "2"
+                }
+              ]
+            },
+            "description": "B1 Pagination API automatic checks. Read-only request."
+          },
+          "response": []
+        },
+        {
+          "name": "Categories | Invalid zero limit",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Invalid pagination: HTTP 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories?skip=0&limit=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "B1 Pagination API automatic checks. Read-only request."
+          },
+          "response": []
+        },
+        {
+          "name": "Categories | Invalid limit over 100",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Invalid pagination: HTTP 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories?skip=0&limit=101",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "101"
+                }
+              ]
+            },
+            "description": "B1 Pagination API automatic checks. Read-only request."
+          },
+          "response": []
+        },
+        {
+          "name": "Categories | Invalid non numeric skip",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Invalid pagination: HTTP 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories?skip=abc&limit=2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "abc"
+                },
+                {
+                  "key": "limit",
+                  "value": "2"
+                }
+              ]
+            },
+            "description": "B1 Pagination API automatic checks. Read-only request."
+          },
+          "response": []
+        },
+        {
+          "name": "Stores | First page (skip=0, limit=2)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"PAGE: HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"PAGE: envelope and limits\", () => {",
+                  "  pm.expect(body.items).to.be.an(\"array\");",
+                  "  pm.expect(body.skip).to.eql(0);",
+                  "  pm.expect(body.limit).to.eql(2);",
+                  "  pm.expect(body.totalCount).to.be.a(\"number\").and.at.least(0);",
+                  "  pm.expect(body.items.length).to.be.at.most(2);",
+                  "});",
+                  "pm.test(\"PAGE: totalCount and nextLink consistent\", () => {",
+                  "  if (body.totalCount > 2) {",
+                  "    pm.expect(body.nextLink).to.be.a(\"string\");",
+                  "    const url = new URL(body.nextLink);",
+                  "    pm.expect(url.searchParams.get(\"skip\")).to.eql(\"2\");",
+                  "    pm.expect(url.searchParams.get(\"limit\")).to.eql(\"2\");",
+                  "  } else pm.expect(body.nextLink).to.be.null;",
+                  "});",
+                  "pm.test(\"PAGE: items sorted by id\", () => {",
+                  "  for (let i = 1; i < body.items.length; i++) pm.expect(body.items[i].id).to.be.above(body.items[i-1].id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores?skip=0&limit=2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "2"
+                }
+              ]
+            },
+            "description": "B1 Pagination API automatic checks. Read-only request."
+          },
+          "response": []
+        },
+        {
+          "name": "Stores | Second page (skip=2, limit=2)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"SECOND PAGE: HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"SECOND PAGE: correct offset and size\", () => {",
+                  "  pm.expect(body.skip).to.eql(2);",
+                  "  pm.expect(body.limit).to.eql(2);",
+                  "  pm.expect(body.items).to.be.an(\"array\");",
+                  "  pm.expect(body.items.length).to.be.at.most(2);",
+                  "  pm.expect(body.items.length).to.eql(Math.min(2,Math.max(0,body.totalCount-2)));",
+                  "});",
+                  "pm.test(\"SECOND PAGE: nextLink expected\", () => {",
+                  "  if (body.totalCount > 4) {",
+                  "    pm.expect(body.nextLink).to.be.a(\"string\");",
+                  "    pm.expect(new URL(body.nextLink).searchParams.get(\"skip\")).to.eql(\"4\");",
+                  "  } else pm.expect(body.nextLink).to.be.null;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores?skip=2&limit=2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "2"
+                },
+                {
+                  "key": "limit",
+                  "value": "2"
+                }
+              ]
+            },
+            "description": "B1 Pagination API automatic checks. Read-only request."
+          },
+          "response": []
+        },
+        {
+          "name": "Stores | Default limit (skip=0)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"DEFAULT LIMIT: HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"DEFAULT LIMIT: skip=0, limit=10\", () => {",
+                  "  pm.expect(body.items).to.be.an(\"array\");",
+                  "  pm.expect(body.skip).to.eql(0);",
+                  "  pm.expect(body.limit).to.eql(10);",
+                  "  pm.expect(body.items.length).to.be.at.most(10);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores?skip=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "B1 Pagination API automatic checks. Read-only request."
+          },
+          "response": []
+        },
+        {
+          "name": "Stores | Legacy C5 response",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"LEGACY C5: HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"LEGACY C5: still a JSON array\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores"
+              ]
+            },
+            "description": "B1 Pagination API automatic checks. Read-only request."
+          },
+          "response": []
+        },
+        {
+          "name": "Stores | Invalid negative skip",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Invalid pagination: HTTP 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores?skip=-1&limit=2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "-1"
+                },
+                {
+                  "key": "limit",
+                  "value": "2"
+                }
+              ]
+            },
+            "description": "B1 Pagination API automatic checks. Read-only request."
+          },
+          "response": []
+        },
+        {
+          "name": "Stores | Invalid zero limit",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Invalid pagination: HTTP 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores?skip=0&limit=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "B1 Pagination API automatic checks. Read-only request."
+          },
+          "response": []
+        },
+        {
+          "name": "Stores | Invalid limit over 100",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Invalid pagination: HTTP 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores?skip=0&limit=101",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "101"
+                }
+              ]
+            },
+            "description": "B1 Pagination API automatic checks. Read-only request."
+          },
+          "response": []
+        },
+        {
+          "name": "Stores | Invalid non numeric skip",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Invalid pagination: HTTP 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores?skip=abc&limit=2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "abc"
+                },
+                {
+                  "key": "limit",
+                  "value": "2"
+                }
+              ]
+            },
+            "description": "B1 Pagination API automatic checks. Read-only request."
+          },
+          "response": []
+        },
+        {
+          "name": "Products | First page (skip=0, limit=2)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"PAGE: HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"PAGE: envelope and limits\", () => {",
+                  "  pm.expect(body.items).to.be.an(\"array\");",
+                  "  pm.expect(body.skip).to.eql(0);",
+                  "  pm.expect(body.limit).to.eql(2);",
+                  "  pm.expect(body.totalCount).to.be.a(\"number\").and.at.least(0);",
+                  "  pm.expect(body.items.length).to.be.at.most(2);",
+                  "});",
+                  "pm.test(\"PAGE: totalCount and nextLink consistent\", () => {",
+                  "  if (body.totalCount > 2) {",
+                  "    pm.expect(body.nextLink).to.be.a(\"string\");",
+                  "    const url = new URL(body.nextLink);",
+                  "    pm.expect(url.searchParams.get(\"skip\")).to.eql(\"2\");",
+                  "    pm.expect(url.searchParams.get(\"limit\")).to.eql(\"2\");",
+                  "  } else pm.expect(body.nextLink).to.be.null;",
+                  "});",
+                  "pm.test(\"PAGE: items sorted by id\", () => {",
+                  "  for (let i = 1; i < body.items.length; i++) pm.expect(body.items[i].id).to.be.above(body.items[i-1].id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products?skip=0&limit=2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "2"
+                }
+              ]
+            },
+            "description": "B1 Pagination API automatic checks. Read-only request."
+          },
+          "response": []
+        },
+        {
+          "name": "Products | Second page (skip=2, limit=2)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"SECOND PAGE: HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"SECOND PAGE: correct offset and size\", () => {",
+                  "  pm.expect(body.skip).to.eql(2);",
+                  "  pm.expect(body.limit).to.eql(2);",
+                  "  pm.expect(body.items).to.be.an(\"array\");",
+                  "  pm.expect(body.items.length).to.be.at.most(2);",
+                  "  pm.expect(body.items.length).to.eql(Math.min(2,Math.max(0,body.totalCount-2)));",
+                  "});",
+                  "pm.test(\"SECOND PAGE: nextLink expected\", () => {",
+                  "  if (body.totalCount > 4) {",
+                  "    pm.expect(body.nextLink).to.be.a(\"string\");",
+                  "    pm.expect(new URL(body.nextLink).searchParams.get(\"skip\")).to.eql(\"4\");",
+                  "  } else pm.expect(body.nextLink).to.be.null;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products?skip=2&limit=2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "2"
+                },
+                {
+                  "key": "limit",
+                  "value": "2"
+                }
+              ]
+            },
+            "description": "B1 Pagination API automatic checks. Read-only request."
+          },
+          "response": []
+        },
+        {
+          "name": "Products | Default limit (skip=0)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"DEFAULT LIMIT: HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"DEFAULT LIMIT: skip=0, limit=10\", () => {",
+                  "  pm.expect(body.items).to.be.an(\"array\");",
+                  "  pm.expect(body.skip).to.eql(0);",
+                  "  pm.expect(body.limit).to.eql(10);",
+                  "  pm.expect(body.items.length).to.be.at.most(10);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products?skip=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "B1 Pagination API automatic checks. Read-only request."
+          },
+          "response": []
+        },
+        {
+          "name": "Products | Legacy C5 response",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"LEGACY C5: HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"LEGACY C5: still a JSON array\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            },
+            "description": "B1 Pagination API automatic checks. Read-only request."
+          },
+          "response": []
+        },
+        {
+          "name": "Products | Invalid negative skip",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Invalid pagination: HTTP 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products?skip=-1&limit=2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "-1"
+                },
+                {
+                  "key": "limit",
+                  "value": "2"
+                }
+              ]
+            },
+            "description": "B1 Pagination API automatic checks. Read-only request."
+          },
+          "response": []
+        },
+        {
+          "name": "Products | Invalid zero limit",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Invalid pagination: HTTP 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products?skip=0&limit=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "B1 Pagination API automatic checks. Read-only request."
+          },
+          "response": []
+        },
+        {
+          "name": "Products | Invalid limit over 100",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Invalid pagination: HTTP 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products?skip=0&limit=101",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "101"
+                }
+              ]
+            },
+            "description": "B1 Pagination API automatic checks. Read-only request."
+          },
+          "response": []
+        },
+        {
+          "name": "Products | Invalid non numeric skip",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Invalid pagination: HTTP 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products?skip=abc&limit=2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "abc"
+                },
+                {
+                  "key": "limit",
+                  "value": "2"
+                }
+              ]
+            },
+            "description": "B1 Pagination API automatic checks. Read-only request."
+          },
+          "response": []
+        }
+      ],
+      "description": "Read-only checks for skip, limit and nextLink. Run after QA1 cleanup; safe for collection Runner."
     }
   ],
   "variable": [

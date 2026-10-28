@@ -1,4 +1,6 @@
-﻿using CatalogManager.Application.Interfaces;
+﻿using CatalogManager.DTOs.Pagination;
+using Microsoft.AspNetCore.Http;
+using CatalogManager.Application.Interfaces;
 using CatalogManager.Domain.Entities;
 using CatalogManager.DTOs.Stores;
 using Microsoft.AspNetCore.Mvc;
@@ -16,13 +18,49 @@ public class StoresApiController : ControllerBase
         _service = service;
     }
 
-    // GET api/stores
+    // GET api/stores?skip=0&limit=10 (B1)
+    // Without pagination parameters, preserve the original C5 array response.
     [HttpGet]
     public async Task<ActionResult<IEnumerable<StoreResponseDto>>> GetAll()
     {
-        var stores = await _service.GetAllAsync();
+        var request = ControllerContext.HttpContext?.Request;
+        var query = request?.Query;
+        var hasSkip = query?.ContainsKey("skip") == true;
+        var hasLimit = query?.ContainsKey("limit") == true;
 
-        return Ok(stores.Select(MapToResponse));
+        if (!hasSkip && !hasLimit)
+        {
+            var all = await _service.GetAllAsync();
+            return Ok(all.Select(MapToResponse));
+        }
+
+        var skipText = hasSkip ? query!["skip"].ToString() : "0";
+        var limitText = hasLimit ? query!["limit"].ToString() : "10";
+        if (!int.TryParse(skipText, out var skip) || skip < 0 ||
+            !int.TryParse(limitText, out var limit) || limit < 1 || limit > 100)
+        {
+            return BadRequest(new { error = "skip must be >= 0 and limit must be between 1 and 100." });
+        }
+
+        var page = await _service.GetPagedAsync(skip, limit);
+        string? nextLink = null;
+        if ((long)skip + limit < page.TotalCount)
+        {
+            var nextSkip = skip + limit;
+            // Preserve the current host, path base and route in the continuation URL.
+            // QueryString.Create encodes the parameters safely.
+            var path = request!.PathBase.Add(request.Path).ToString();
+            nextLink = $"{request.Scheme}://{request.Host}{path}" +
+                QueryString.Create(new Dictionary<string, string?>
+                {
+                    ["skip"] = nextSkip.ToString(),
+                    ["limit"] = limit.ToString()
+                }).ToString();
+        }
+
+        return Ok(new PagedResponseDto<StoreResponseDto>(
+            page.Items.Select(MapToResponse).ToList(), skip, limit,
+            page.TotalCount, nextLink));
     }
 
     // GET api/stores/5

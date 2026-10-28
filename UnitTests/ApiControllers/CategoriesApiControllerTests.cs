@@ -1,4 +1,7 @@
-﻿using CatalogManager.ApiControllers;
+﻿using CatalogManager.Application.Models;
+using Microsoft.AspNetCore.Http;
+using CatalogManager.DTOs.Pagination;
+using CatalogManager.ApiControllers;
 using CatalogManager.Application.Interfaces;
 using CatalogManager.Domain.Entities;
 using CatalogManager.DTOs.Categories;
@@ -23,6 +26,65 @@ public class CategoriesApiControllerTests
         Name = "Electronics",
         Description = "Electronic devices"
     };
+
+    [Fact]
+    public async Task GetAll_WithPagination_ReturnsPageAndNextLink()
+    {
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext()
+        };
+        var request = _controller.HttpContext.Request;
+        request.Scheme = "https";
+        request.Host = new HostString("localhost", 5001);
+        request.Path = "/api/categories";
+        request.QueryString = new QueryString("?skip=0&limit=1");
+
+        _serviceMock.Setup(s => s.GetPagedAsync(0, 1))
+            .ReturnsAsync(new PagedResult<Category>(new List<Category>(), 3));
+
+        var result = await _controller.GetAll();
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var page = Assert.IsType<PagedResponseDto<CategoryResponseDto>>(ok.Value);
+        Assert.Equal(0, page.Skip);
+        Assert.Equal(1, page.Limit);
+        Assert.Equal(3, page.TotalCount);
+        Assert.Equal("https://localhost:5001/api/categories?skip=1&limit=1", page.NextLink);
+        _serviceMock.Verify(s => s.GetPagedAsync(0, 1), Times.Once);
+    }
+
+    [Theory]
+    [InlineData("?skip=-1&limit=10")]
+    [InlineData("?skip=0&limit=0")]
+    [InlineData("?skip=abc&limit=10")]
+    [InlineData("?skip=0&limit=101")]
+    public async Task GetAll_InvalidPagination_ReturnsBadRequest(string query)
+    {
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext()
+        };
+        _controller.HttpContext.Request.QueryString = new QueryString(query);
+        var result = await _controller.GetAll();
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+        _serviceMock.Verify(s => s.GetPagedAsync(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetAll_LastPage_HasNullNextLink()
+    {
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext()
+        };
+        _controller.HttpContext.Request.QueryString = new QueryString("?skip=10&limit=5");
+        _serviceMock.Setup(s => s.GetPagedAsync(10, 5))
+            .ReturnsAsync(new PagedResult<Category>(new List<Category>(), 12));
+        var result = await _controller.GetAll();
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var page = Assert.IsType<PagedResponseDto<CategoryResponseDto>>(ok.Value);
+        Assert.Null(page.NextLink);
+    }
 
     [Fact]
     public async Task GetAll_ReturnsOkWithCategories()

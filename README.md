@@ -304,4 +304,8 @@ These numbers are not claimed as current C5 or QA1 coverage.
 - **C5 — REST API:** implemented, manually tested, and committed to GitHub.
 - **QA1 — Automated Web API Testing:** implemented; 62/62 assertions passed in one iteration and 124/124 in two iterations; a separate defense script has been prepared.
 
-Future development may include API pagination, containerization, caching and other coursework stages.
+Future development may include containerization, caching, CI/CD, and other coursework stages.
+
+## B1 — Pagination API
+
+Offset pagination with `skip`, `limit`, and `nextLink` is implemented for all three REST API collections. Example: `GET /api/products?skip=0&limit=10`. Full details and defense steps: [B1_PAGINATION_GUIDE.md](B1_PAGINATION_GUIDE.md).

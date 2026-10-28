@@ -1,4 +1,4 @@
-﻿
+﻿using CatalogManager.Application.Models;
 using CatalogManager.Application.Interfaces;
 using CatalogManager.Domain.Entities;
 using CatalogManager.Infrastructure.Data;
@@ -13,6 +13,15 @@ public class StoreRepository : IStoreRepository
     public StoreRepository(ApplicationDbContext context)
     {
         _context = context;
+    }
+
+    public async Task<PagedResult<Store>> GetPagedAsync(int skip, int limit)
+    {
+        var query = _context.Stores.AsNoTracking();
+        var totalCount = await query.CountAsync();
+        var items = await query.OrderBy(e => e.Id)
+            .Skip(skip).Take(limit).ToListAsync();
+        return new PagedResult<Store>(items, totalCount);
     }
 
     public async Task<List<Store>> GetAllAsync()

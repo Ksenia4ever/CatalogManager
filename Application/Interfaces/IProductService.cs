@@ -1,4 +1,4 @@
-﻿
+﻿using CatalogManager.Application.Models;
 using CatalogManager.Domain.Entities;
 
 namespace CatalogManager.Application.Interfaces;
@@ -6,6 +6,8 @@ namespace CatalogManager.Application.Interfaces;
 public interface IProductService
 {
     Task<List<Product>> GetAllAsync();
+
+    Task<PagedResult<Product>> GetPagedAsync(int skip, int limit);
 
     Task<Product?> GetByIdAsync(int id);
 
