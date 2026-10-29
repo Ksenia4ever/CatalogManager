@@ -1,4 +1,3 @@
-
 # CatalogManager
 
 CatalogManager is a layered **ASP.NET Core MVC + REST API** application for managing a product catalog. It supports categories, stores, and products, persists data in PostgreSQL using Entity Framework Core, and includes automated C# tests and a repeatable Postman API test suite.
@@ -6,33 +5,46 @@ CatalogManager is a layered **ASP.NET Core MVC + REST API** application for mana
 The project was developed for the **Web Technologies** coursework:
 
 - **C1 — MVC Application:** CRUD for three related entities with an optional product image URL.
-- **C5 — REST API:** JSON CRUD endpoints, DTOs, validation and HTTP status codes.
-- **QA1 — Automated Web API Testing:** repeatable Postman collection with positive and negative scenarios, dynamic IDs, assertions and cleanup.
+- **C5 — REST API:** JSON CRUD endpoints, DTOs, validation, and HTTP status codes.
+- **QA1 — Automated Web API Testing:** repeatable Postman collection with positive and negative scenarios, dynamic IDs, assertions, and cleanup.
 - **B1 — Pagination API:** offset pagination with `skip`, `limit`, and `nextLink` for collection endpoints.
 - **C8 — External API Integration:** interactive stores map powered by OpenStreetMap and Leaflet.
+- **B9 — API Output Caching:** in-memory response caching using ASP.NET Core Output Cache, cache expiration, and tag-based invalidation.
+
+---
 
 ## Features
 
-- **Categories:** create, read, update and delete; duplicate names are rejected.
-- **Stores:** manage name, address, latitude and longitude.
-- **Products:** manage name, description, price, optional image URL, category and store.
-- **Validation:** required values, price limits, coordinates and valid related entity IDs.
+- **Categories:** create, read, update, and delete; duplicate names are rejected.
+- **Stores:** manage name, address, latitude, and longitude.
+- **Products:** manage name, description, price, optional image URL, category, and store.
+- **Validation:** required values, price limits, coordinates, and valid related entity IDs.
 - **Deletion rules:** categories and stores cannot be deleted while referenced by products.
-- **MVC interface:** Razor Views, Bootstrap, form ViewModels and antiforgery protection.
-- **REST API:** JSON endpoints for Categories, Stores and Products.
+- **MVC interface:** Razor Views, Bootstrap, form ViewModels, and antiforgery protection.
+- **REST API:** JSON endpoints for Categories, Stores, and Products.
 - **Pagination:** offset-based pagination for API collection endpoints.
 - **Stores map:** interactive map, store markers, popups, name search, and Refresh without a full page reload.
-- **Testing:** xUnit/Moq, HTTP integration tests and an automated Postman collection.
+- **API caching:** 30-second in-memory Output Cache for GET endpoints, with tag-based invalidation after successful API modifications.
+- **Testing:** xUnit, Moq, HTTP integration tests, and an automated Postman collection.
+
+---
 
 ## Technology Stack
 
-- C# / .NET 10; ASP.NET Core MVC, Web API and Razor Views; Bootstrap
-- Entity Framework Core 10; PostgreSQL and Npgsql
-- xUnit; Moq; ASP.NET Core `WebApplicationFactory`
-- Postman Collection Runner with JavaScript post-response assertions
-- OpenStreetMap tile service; Leaflet.js
-- HTML, CSS and JavaScript
-- Coverlet and ReportGenerator; Git and GitHub
+- C# / .NET 10
+- ASP.NET Core MVC, Web API, and Razor Views
+- Bootstrap, HTML, CSS, and JavaScript
+- Entity Framework Core 10
+- PostgreSQL and Npgsql
+- ASP.NET Core Output Caching (in-memory)
+- xUnit and Moq
+- ASP.NET Core `WebApplicationFactory`
+- Postman Collection Runner with JavaScript assertions
+- OpenStreetMap and Leaflet.js
+- Coverlet and ReportGenerator
+- Git and GitHub
+
+---
 
 ## Solution Structure
 
@@ -43,23 +55,28 @@ CatalogManager/
 │   ├── Controllers/           # MVC controllers
 │   ├── ApiControllers/        # JSON API controllers
 │   ├── Models/                # MVC form ViewModels
-│   ├── DTOs/                  # API request/response DTOs
-│   ├── Views/                 # Razor Views
-│   │   └── StoresMap/        # Interactive map page
+│   ├── DTOs/                  # API DTOs and pagination
+│   ├── Views/
+│   │   └── StoresMap/         # Interactive map page
 │   ├── wwwroot/
-│   │   ├── js/               # Map JavaScript
-│   │   └── css/              # Map styles
-│   └── Program.cs
+│   │   ├── js/                # Map JavaScript
+│   │   └── css/               # Map styles
+│   ├── Program.cs             # Application and Output Cache setup
+│   └── appsettings.Development.json
 ├── Application/               # Services and interfaces
-├── Domain/                    # Category, Store and Product entities
-├── Infrastructure/            # DbContext, repositories, migrations
+├── Domain/                    # Domain entities
+├── Infrastructure/            # EF Core, repositories, migrations
 ├── UnitTests/                 # Unit tests
-├── IntegrationTests/          # HTTP + PostgreSQL integration tests
+├── IntegrationTests/          # HTTP integration tests
 ├── Postman/
-│   └── CatalogManager_QA1_Automated.postman_collection.json
+│   └── CatalogManager_QA1_B1_B9.postman_collection.json
 ├── B1_PAGINATION_GUIDE.md
 └── README.md
 ```
+
+The Postman collection filename above is the recommended name for the final exported collection. The exported file must be placed in the `Postman` directory.
+
+---
 
 ## Architecture and Data Model
 
@@ -67,15 +84,31 @@ Browser → MVC Controller → Application Service → Repository → EF Core / 
 
 HTTP client → API Controller → Application Service → Repository → EF Core / PostgreSQL
 
-MVC pages and REST API endpoints use the same business services. Each **Product** belongs to one **Category** and one **Store**; a category or store can have many products. The foreign-key relations restrict deleting referenced categories and stores.
+The MVC application and REST API use the same business services.
 
-MVC uses `CategoryFormViewModel`, `StoreFormViewModel` and `ProductFormViewModel`. API endpoints use separate create, update and response DTOs to avoid directly exposing database entities.
+Each **Product** belongs to one **Category** and one **Store**.
+
+A category or store can contain multiple products. Foreign-key constraints prevent deleting referenced categories and stores.
+
+MVC uses dedicated form ViewModels:
+
+- `CategoryFormViewModel`
+- `StoreFormViewModel`
+- `ProductFormViewModel`
+
+API endpoints use separate create, update, and response DTOs to avoid directly exposing database entities.
+
+---
 
 ## MVC Application (C1)
 
-MVC controllers `CategoriesController`, `StoresController` and `ProductsController` provide Create, Read, Update and Delete operations through Razor Views in `Frontend/Views/`.
+MVC controllers `CategoriesController`, `StoresController`, and `ProductsController` provide Create, Read, Update, and Delete operations through Razor Views in `Frontend/Views/`.
 
-Input validation uses Data Annotations and service-layer business rules. Form POST actions use antiforgery validation.
+Input validation uses Data Annotations and service-layer business rules.
+
+Form POST actions use antiforgery validation.
+
+---
 
 ## REST API (C5)
 
@@ -85,7 +118,7 @@ Input validation uses Data Annotations and service-layer business rules. Form PO
 | Stores | `/api/stores` | `/api/stores/{id}` |
 | Products | `/api/products` | `/api/products/{id}` |
 
-Endpoints return:
+### HTTP Status Codes
 
 - `200 OK` — successful reads.
 - `201 Created` — successful creation.
@@ -118,72 +151,56 @@ Content-Type: application/json
 
 The category and store IDs must refer to existing records.
 
+---
+
 ## Automated Postman API Testing (QA1)
 
-The repository contains **one automated Postman collection**:
+The project includes an automated Postman API test collection.
 
-`Postman/CatalogManager_QA1_Automated.postman_collection.json`
+The original QA1 implementation covers 50 requests in four folders:
 
-Collection name: **CatalogManager API Tests - Automated QA1**.
-
-The collection contains **50 requests in four folders**, executed in the following order:
-
-1. **Categories (13 requests):** listing, retrieving, creating and updating categories; duplicate-name, invalid JSON and input validation.
-2. **Stores (13 requests):** listing, retrieving, creating and updating stores; required fields and coordinate validation.
-3. **Products (15 requests):** listing, retrieving, creating and updating products; price, name, foreign-key and JSON validation.
-4. **Cleanup and Relationship Checks (9 requests):** deletion conflicts (`409`), deleting dependent resources in the correct order, and verifying subsequent `404` responses.
+1. **Categories (13 requests):** listing, retrieving, creating, and updating categories; duplicate-name validation and invalid JSON.
+2. **Stores (13 requests):** listing, retrieving, creating, and updating stores; required fields and coordinate validation.
+3. **Products (15 requests):** listing, retrieving, creating, and updating products; price, name, foreign-key, and JSON validation.
+4. **Cleanup and Relationship Checks (9 requests):** deletion conflicts, cleanup in dependency order, and subsequent `404` verification.
 
 ### How Automation Works
 
 - `Scripts → Pre-request` and `Scripts → Post-response` prepare test data and verify responses using `pm.test` and `pm.expect`.
-- Collection variables such as `baseUrl`, `runToken`, `categoryId`, `secondCategoryId`, `storeId` and `productId` connect requests.
-- IDs returned by POST requests are stored using `pm.collectionVariables.set(...)` and reused as `{{categoryId}}`, `{{storeId}}`, etc.
-- A run-specific token distinguishes newly created test categories from earlier runs.
-- Cleanup requests delete products before their stores and categories, respecting foreign-key constraints.
-- Negative test cases **pass** when the API returns the expected error status, such as `400`, `404` or `409`.
+- Collection variables such as `baseUrl`, `runToken`, `categoryId`, `storeId`, and `productId` connect requests.
+- IDs returned by POST requests are stored using `pm.collectionVariables.set(...)`.
+- A run-specific token distinguishes newly created test data from previous runs.
+- Cleanup requests delete products before their stores and categories.
+- Negative test cases pass when the API returns the expected `400`, `404`, or `409` status.
 
-### Import and Run
-
-1. Start CatalogManager and ensure its HTTPS API is reachable.
-2. Import `Postman/CatalogManager_QA1_Automated.postman_collection.json` into Postman.
-3. Open the collection's **Variables** tab and check `baseUrl`. The verified local IIS Express value was `https://localhost:44361`, but the port may differ on another machine.
-4. Select the **whole collection → Run**.
-5. Keep all four folders enabled and in their original order.
-6. Select **1 or 2 iterations** and run using Collection Runner.
-7. Review **Passed, Failed, Errors** and individual request results.
-
-HTTP statuses `400`, `404` and `409` are expected outcomes for negative tests and do not indicate failed assertions when the corresponding conditions are verified.
-
-The collection requires a running local API and is intended for local or dedicated test environments because its requests create and delete data.
-
-Do not run it against valuable or production data.
-
-### Verified Postman Results
+### Verified QA1 Results
 
 | Run | Iterations | Passed Assertions | Failed | Errors |
 |---|---:|---:|---:|---:|
-| Initial automated run | 1 | **62** | **0** | **0** |
-| Repeatability verification | 2 | **124** | **0** | **0** |
+| Initial automated run | 1 | 62 | 0 | 0 |
+| Repeatability verification | 2 | 124 | 0 | 0 |
 
-These results were confirmed using Postman Collection Runner on **28 October 2026**.
+Verified using Postman Collection Runner on **28 October 2026**.
 
-The numbers represent **Postman assertions**, not xUnit tests.
+The successful two-iteration run demonstrated that the workflow can be repeated without manually changing resource IDs.
 
-The successful two-iteration run demonstrates that the automated test workflow can be repeated without manual ID replacement.
+---
 
 ## B1 — Pagination API
 
 ### Overview
 
-B1 implements offset-based pagination for the existing REST API collection endpoints.
+B1 implements offset-based pagination for the REST API collection endpoints.
 
-Pagination allows API clients to request a limited number of records rather than retrieving the entire collection at once.
+Pagination allows clients to retrieve a limited number of records rather than requesting the entire collection at once.
 
 ### Supported Endpoints
 
-- `GET /api/categories`
-- `GET /api/stores`
-- `GET /api/products`
+```http
+GET /api/categories?skip=0&limit=10
+GET /api/stores?skip=0&limit=10
+GET /api/products?skip=0&limit=10
+```
 
 ### Query Parameters
 
@@ -191,19 +208,46 @@ Pagination allows API clients to request a limited number of records rather than
 - `limit` — maximum number of records to return.
 - `nextLink` — link to the next page when additional records are available.
 
+When pagination is requested, the response includes the selected items, pagination parameters, total record count, and next-page link.
+
 ### Example
 
 ```http
-GET /api/products?skip=0&limit=10
+GET /api/products?skip=0&limit=2
 ```
 
-The API returns the requested page of products and provides navigation information for retrieving the next page.
+Example response structure:
+
+```json
+{
+  "items": [
+    {
+      "id": 1,
+      "name": "Example Product"
+    }
+  ],
+  "skip": 0,
+  "limit": 2,
+  "totalCount": 1,
+  "nextLink": null
+}
+```
+
+The example illustrates the pagination response structure; the actual product DTO contains additional fields.
+
+### Compatibility
+
+Existing collection endpoints remain compatible with earlier C5 clients.
+
+Requests without pagination parameters preserve the original JSON array response.
 
 ### Documentation
 
-Detailed implementation information, API examples, validation scenarios, and defense instructions are provided in:
+Detailed implementation information, API examples, validation scenarios, and defense instructions are available in:
 
 [B1_PAGINATION_GUIDE.md](B1_PAGINATION_GUIDE.md)
+
+---
 
 ## C8 — Interactive Stores Map (OpenStreetMap + Leaflet)
 
@@ -211,30 +255,28 @@ Detailed implementation information, API examples, validation scenarios, and def
 
 C8 integrates an external mapping service into CatalogManager using **OpenStreetMap** and **Leaflet.js**.
 
-The application provides an interactive map at `/StoresMap`, displaying store locations based on geographic coordinates stored in the PostgreSQL database.
+The application provides an interactive map at:
 
-Store information is loaded dynamically through the existing REST API endpoint:
+`/StoresMap`
+
+Store locations are retrieved from the PostgreSQL database through the existing REST API:
 
 ```http
 GET /api/stores
 ```
 
-Unlike hard-coded maps, the displayed markers use actual store data retrieved from the application.
-
 ### Implemented Features
 
 - **Interactive Map:** display an interactive map powered by OpenStreetMap and Leaflet.
-- **Store Markers:** visualize stores using their latitude and longitude coordinates.
-- **Store Popups:** display store information and a link to store details when clicking a marker.
-- **Client-Side Search:** filter markers by entering part of a store name.
-- **Dynamic Counter:** show the number of currently displayed stores.
-- **Refresh Functionality:** reload store information from the REST API without reloading the entire page.
-- **Invalid Coordinates Handling:** safely skip stores with missing or invalid coordinates.
-- **Navigation:** access the Stores Map page through the application menu.
+- **Store Markers:** visualize stores using latitude and longitude.
+- **Store Popups:** display store information and links to details.
+- **Client-Side Search:** filter markers by store name.
+- **Dynamic Counter:** show the number of visible stores.
+- **Refresh Functionality:** reload store data without refreshing the entire page.
+- **Invalid Coordinates Handling:** skip stores with invalid or missing coordinates.
+- **Navigation:** open Stores Map from the application menu.
 
 ### Architecture
-
-The map functionality follows the existing layered architecture.
 
 ```text
 Browser
@@ -263,72 +305,20 @@ PostgreSQL
 
 Leaflet.js renders the map and manages markers and popups.
 
-OpenStreetMap provides the geographic map tiles.
+OpenStreetMap supplies geographic map tiles.
 
 ### Implementation Files
 
 | File | Responsibility |
 |---|---|
 | `Frontend/Controllers/StoresMapController.cs` | MVC controller for the map page |
-| `Frontend/Views/StoresMap/Index.cshtml` | Map interface, search field and Refresh button |
-| `Frontend/wwwroot/js/stores-map.js` | Fetching API data, markers, popups, filtering and refresh |
+| `Frontend/Views/StoresMap/Index.cshtml` | Map interface and controls |
+| `Frontend/wwwroot/js/stores-map.js` | API requests, markers, filtering, refresh |
 | `Frontend/wwwroot/css/stores-map.css` | Map styling |
-| `Frontend/Views/Shared/_Layout.cshtml` | Navigation link to Stores Map |
-| `IntegrationTests/Tests/StoresMapIntegrationTests.cs` | Integration tests for the map page and static resources |
-
-### How It Works
-
-1. The user opens `/StoresMap`.
-2. Leaflet initializes the interactive map.
-3. JavaScript sends an HTTP request to `GET /api/stores`.
-4. The REST API retrieves store data from PostgreSQL.
-5. The browser receives JSON containing store information and coordinates.
-6. Stores with valid geographic coordinates are displayed as map markers.
-7. Clicking a marker opens a popup with store details.
-8. The search input filters the visible markers.
-9. The Refresh button requests the latest data from the REST API.
-
-This implementation reuses the existing Stores REST API without requiring an additional database schema.
-
-### External Service Integration
-
-**OpenStreetMap** supplies the map tiles, while **Leaflet.js** is responsible for interactive map rendering and user interactions.
-
-The application does not require an external API key.
-
-No additional Entity Framework Core migrations are necessary.
-
-An internet connection is required to load OpenStreetMap tiles and externally hosted Leaflet resources.
+| `Frontend/Views/Shared/_Layout.cshtml` | Navigation link |
+| `IntegrationTests/Tests/StoresMapIntegrationTests.cs` | Integration tests |
 
 ### Manual Verification
-
-1. Run the `Frontend` application.
-2. Open `/StoresMap` or select **Stores Map** from the navigation menu.
-3. Verify that the OpenStreetMap map loads successfully.
-4. Check that store markers appear at their saved coordinates.
-5. Click a marker and verify that its popup displays store information.
-6. Type part of a store name into the search field.
-7. Verify that only matching markers remain visible and the counter updates.
-8. Clear the search field and confirm that all matching stores return.
-9. Click **Refresh** and confirm that data reloads without refreshing the browser page.
-10. Open Postman and send `GET /api/stores`.
-11. Verify the `200 OK` response and the returned JSON data, including latitude and longitude.
-
-### Integration Tests
-
-C8 introduces `StoresMapIntegrationTests.cs`.
-
-The integration tests verify:
-
-- The `/StoresMap` MVC endpoint returns HTTP `200 OK`.
-- The HTML page contains the map container and search interface.
-- The page references the necessary JavaScript resources.
-- The map JavaScript file is accessible.
-- The map CSS file is accessible.
-
-The test class contains **three test cases**: one MVC page test and two parameterized static resource tests.
-
-### Verified Results
 
 The following functionality was manually verified:
 
@@ -340,23 +330,276 @@ The following functionality was manually verified:
 - Refresh functionality.
 - Store coordinates returned through Postman.
 
-Visual Studio Test Explorer confirmed:
+### Integration Tests
 
-- **Total C# tests:** 263
-- **Passed:** 263
-- **Failed:** 0
-- **Skipped:** 0
+C8 introduced `StoresMapIntegrationTests.cs`.
 
-The successful test run includes the C8 integration tests and the previously implemented functionality.
+The tests verify the MVC page, map interface, and accessibility of related static resources.
+
+Three integration test cases were added.
+
+No external API key or additional EF Core migration is required.
+
+Internet access is needed to load OpenStreetMap tiles and externally hosted Leaflet resources.
+
+---
+
+## B9 — API Output Caching
+
+### Overview
+
+B9 implements server-side response caching for the existing REST API using **ASP.NET Core Output Cache**.
+
+The implementation uses the built-in in-memory cache rather than an external Redis server.
+
+Caching is intended to reduce unnecessary response generation and repeated database access for identical GET requests.
+
+### Cache Configuration
+
+Output caching is configured in:
+
+`Frontend/Program.cs`
+
+The application registers Output Cache services using:
+
+```csharp
+builder.Services.AddOutputCache(options =>
+{
+    options.AddPolicy("CategoriesCache", policy =>
+        policy.Expire(TimeSpan.FromSeconds(30))
+              .Tag("categories"));
+
+    options.AddPolicy("StoresCache", policy =>
+        policy.Expire(TimeSpan.FromSeconds(30))
+              .Tag("stores"));
+
+    options.AddPolicy("ProductsCache", policy =>
+        policy.Expire(TimeSpan.FromSeconds(30))
+              .Tag("products"));
+});
+```
+
+The Output Cache middleware is enabled using:
+
+```csharp
+app.UseOutputCache();
+```
+
+### Cache Policies
+
+| Policy | Resource | Expiration | Tag |
+|---|---|---|---|
+| `CategoriesCache` | Categories API | 30 seconds | `categories` |
+| `StoresCache` | Stores API | 30 seconds | `stores` |
+| `ProductsCache` | Products API | 30 seconds | `products` |
+
+The corresponding policies are applied to GET actions in the API controllers using Output Cache attributes.
+
+### Cached Endpoints
+
+```http
+GET /api/categories
+GET /api/stores
+GET /api/products
+```
+
+Collection requests with pagination parameters are also supported:
+
+```http
+GET /api/categories?skip=0&limit=10
+GET /api/stores?skip=0&limit=10
+GET /api/products?skip=0&limit=10
+```
+
+Different query-string parameters are taken into account when constructing the default Output Cache keys.
+
+As a result, paginated requests can be cached separately from requests without pagination.
+
+### Cache Expiration
+
+Cached responses have a configured expiration time of **30 seconds**.
+
+After the expiration period, the next eligible request must generate a fresh response.
+
+The newly generated response can then be cached again.
+
+### Cache Invalidation
+
+The API controllers use `IOutputCacheStore` to invalidate cached responses after successful data modifications.
+
+Cache entries are invalidated using:
+
+```csharp
+await cache.EvictByTagAsync(
+    "categories",
+    cancellationToken);
+```
+
+Equivalent invalidation is configured for stores and products.
+
+### Invalidation Rules
+
+| API Operation | Expected Cache Behavior |
+|---|---|
+| GET | Eligible responses are cached |
+| Repeated GET | Cached response may be reused |
+| POST | Relevant cache entries are invalidated after successful creation |
+| PUT | Relevant cache entries are invalidated after successful update |
+| DELETE | Relevant cache entries are invalidated after successful deletion |
+| Cache expiration | Expired entries are regenerated on subsequent requests |
+
+Cache invalidation is implemented for successful REST API modifications. Changes made directly in PostgreSQL or through MVC actions are not automatically covered by these API invalidation calls; such changes may remain invisible in cached API responses until expiration.
+
+### Implementation Files
+
+| File | Responsibility |
+|---|---|
+| `Frontend/Program.cs` | Register Output Cache policies and middleware |
+| `Frontend/ApiControllers/CategoriesApiController.cs` | Category caching and invalidation |
+| `Frontend/ApiControllers/StoresApiController.cs` | Store caching and invalidation |
+| `Frontend/ApiControllers/ProductsApiController.cs` | Product caching and invalidation |
+| `Frontend/appsettings.Development.json` | Optional diagnostic logging configuration |
+
+### Compatibility With Previous Stages
+
+The B9 implementation preserves:
+
+- Existing C5 CRUD endpoints.
+- HTTP status codes and validation.
+- B1 pagination behavior.
+- QA1 automated API testing.
+- C8 map functionality and store data loading.
+
+The existing C# tests continue to pass after adding caching.
+
+### B9 Postman Testing
+
+The updated Postman collection contains a dedicated folder:
+
+`B9 - API Caching`
+
+It includes 24 HTTP requests with automated assertions.
+
+The test scenarios cover:
+
+- Creating temporary categories, stores, and products.
+- Warming collection GET endpoints.
+- Repeating GET requests.
+- Updating data using PUT.
+- Checking that updated data appears in GET responses.
+- Checking paginated GET responses after updates.
+- Deleting temporary entities.
+- Checking that deleted entities no longer appear.
+- Cleaning up temporary test records.
+
+The workflow uses collection variables and dynamic resource IDs.
+
+### Verified B9 Postman Results
+
+| Metric | Result |
+|---|---:|
+| Requests | 24 |
+| Assertions | 48 |
+| Passed | 48 |
+| Failed | 0 |
+| Errors | 0 |
+| Iterations | 1 |
+
+**Result: 48 passed, 0 failed, 0 errors.**
+
+Verified using Postman Collection Runner on **29 October 2026**.
+
+These assertions confirm correct API responses after modifying and deleting records, as well as compatibility with B1 pagination.
+
+The HTTP assertions alone do not prove that repeated responses were served from memory. Confirming an actual cache hit requires additional server-side diagnostics or instrumentation.
+
+### Cache Diagnostics
+
+For development diagnostics, the following log category can be configured in `Frontend/appsettings.Development.json`:
+
+```json
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning",
+      "Microsoft.AspNetCore.OutputCaching": "Debug"
+    }
+  }
+}
+```
+
+This is an example of the Logging section, not necessarily a replacement for the full configuration file.
+
+Output Cache diagnostics can be inspected while sending repeated GET requests in Postman.
+
+The final Cache HIT verification is tracked separately from the completed response-correctness tests.
+
+### Limitations
+
+- The current implementation uses memory-local caching, not Redis.
+- Cache entries are not shared across multiple application instances.
+- Cache entries are cleared when the application process restarts.
+- API modifications trigger invalidation, but direct database updates do not.
+- MVC modifications are not covered by the API-controller invalidation logic.
+- The cache is configured for a short 30-second lifetime.
+- Cached HTTP responses do not necessarily include an `Age` or `Cache-Control` header.
+
+No new PostgreSQL migrations are required for B9.
+
+---
+
+## Postman Collection — QA1 + B1 + B9
+
+The recommended final collection is:
+
+`CatalogManager API Tests - QA1 B1 B9`
+
+Recommended export path:
+
+`Postman/CatalogManager_QA1_B1_B9.postman_collection.json`
+
+This collection combines the automated API tests from previous stages with pagination checks and API caching scenarios.
+
+### How to Import and Run
+
+1. Start CatalogManager in Visual Studio.
+2. Import the JSON collection into Postman.
+3. Open the collection's **Variables** tab.
+4. Check the `baseUrl` value.
+5. Ensure the URL matches the running HTTPS application.
+6. Run the relevant folder with **1 iteration**.
+7. Review Passed, Failed, Errors, and individual request results.
+
+A previously verified IIS Express address was:
+
+`https://localhost:44361`
+
+The actual port may differ between computers or launch profiles.
+
+### Safety Notes
+
+The collection includes requests that create, modify, and delete data.
+
+Run it only against a local development database or a dedicated test environment.
+
+Do not execute data-changing Postman tests against production or valuable data.
+
+---
 
 ## Requirements
 
 - .NET 10 SDK
 - Running PostgreSQL server
-- Visual Studio with ASP.NET/web development tools or a compatible editor
-- Postman for importing and running the automated QA1 collection
-- Internet access for OpenStreetMap and Leaflet resources
+- Visual Studio with ASP.NET/web development tools, or a compatible editor
+- Postman
+- Internet access for OpenStreetMap and Leaflet
 - Optional: pgAdmin
+- Optional: ReportGenerator for coverage reports
+
+No Redis installation or additional NuGet package is required for the current B9 implementation.
+
+---
 
 ## Local Setup
 
@@ -368,23 +611,27 @@ cd CatalogManager
 dotnet restore CatalogManager.slnx
 ```
 
+Replace `<YOUR_REPOSITORY_URL>` with the actual Git repository URL.
+
 ### 2. Configure the Development Database
 
-Create the PostgreSQL database `CatalogManagerDb`.
+Create a PostgreSQL database named:
 
-Configure application credentials using **User Secrets**, instead of storing passwords in tracked files:
+`CatalogManagerDb`
+
+Configure the database connection using **User Secrets**:
 
 ```bash
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=CatalogManagerDb;Username=postgres;Password=YOUR_PASSWORD" --project Frontend
 ```
 
-Replace `YOUR_PASSWORD` with your own PostgreSQL password.
+Replace `YOUR_PASSWORD` with your PostgreSQL password.
 
-User Secrets are intended for local development, not production secret management.
+User Secrets are intended for local development and should not be used as a production secret store.
 
-### 3. Apply Migrations and Run
+### 3. Apply Migrations
 
-Install the EF Core command-line tool if necessary:
+Install the EF Core CLI tool if necessary:
 
 ```bash
 dotnet tool install --global dotnet-ef
@@ -396,28 +643,54 @@ Apply migrations:
 dotnet ef database update --project Infrastructure --startup-project Frontend
 ```
 
-Start the application:
+### 4. Start the Application
 
 ```bash
 dotnet run --project Frontend
 ```
 
-Use the local HTTPS address displayed by the application. The IIS Express port may differ from `44361`.
+Open the local application URL displayed in the terminal.
+
+The IIS Express address used by Visual Studio may differ from the URL shown by `dotnet run`.
+
+### 5. Verify the API
+
+Example endpoints:
+
+```http
+GET /api/categories
+GET /api/stores
+GET /api/products
+```
+
+Pagination example:
+
+```http
+GET /api/products?skip=0&limit=10
+```
+
+Interactive stores map:
+
+`/StoresMap`
+
+---
 
 ## C# Automated Testing
 
-The solution contains two testing projects:
+The solution contains two testing projects.
 
 | Project | Purpose |
 |---|---|
-| `UnitTests` | Business services, MVC controllers and API controllers tested using Moq |
-| `IntegrationTests` | HTTP workflows through WebApplicationFactory and a separate PostgreSQL test database |
+| `UnitTests` | Business services, MVC controllers, and API controllers tested using Moq |
+| `IntegrationTests` | HTTP workflows through WebApplicationFactory and a separate PostgreSQL database |
 
 ### Test Database Setup
 
-Create a separate database named `CatalogManagerTestDb`.
+Create a separate database named:
 
-Configure test credentials through User Secrets:
+`CatalogManagerTestDb`
+
+Configure test credentials:
 
 ```bash
 dotnet user-secrets set "ConnectionStrings:TestConnection" "Host=localhost;Port=5432;Database=CatalogManagerTestDb;Username=postgres;Password=YOUR_PASSWORD" --project IntegrationTests
@@ -433,7 +706,9 @@ From the solution root:
 dotnet test CatalogManager.slnx
 ```
 
-Alternatively, use **Test → Test Explorer → Run All Tests** in Visual Studio.
+Alternatively, in Visual Studio:
+
+**Test → Test Explorer → Run All Tests**
 
 ### Last Confirmed C# Test Results
 
@@ -445,9 +720,13 @@ Alternatively, use **Test → Test Explorer → Run All Tests** in Visual Studio
 
 **Result: 263 passed, 0 failed, 0 skipped.**
 
-Verified in Visual Studio Test Explorer on **29 October 2026**, including the C8 map integration tests.
+Verified in Visual Studio Test Explorer on **29 October 2026**, after applying the B9 controller changes.
 
-These tests are separate from the **62/124 Postman assertions**.
+These results include the previous functionality and C8 integration tests.
+
+They do not represent 263 cache-specific tests.
+
+---
 
 ## Code Coverage
 
@@ -469,33 +748,58 @@ Generate the combined HTML report:
 reportgenerator -reports:"UnitTests/TestResults/**/coverage.cobertura.xml;IntegrationTests/TestResults/**/coverage.cobertura.xml" -targetdir:"CoverageReport" -reporttypes:"Html;Cobertura"
 ```
 
-Open `CoverageReport/index.html`.
+Open:
+
+`CoverageReport/index.html`
 
 Exclude stale coverage files when merging results.
 
+### Previous Coverage Results
+
 The previously reviewed **pre-C5 report** showed:
 
-- **Line coverage:** 76.1%.
-- **Branch coverage:** 77.7%.
-- **Application layer line coverage:** 100%.
+- Line coverage: 76.1%.
+- Branch coverage: 77.7%.
+- Application layer line coverage: 100%.
 
-These numbers are not claimed as current C5, QA1, B1, or C8 coverage.
+These figures are historical and must not be treated as current B9 coverage.
+
+---
 
 ## Security Notes
 
-- Do not commit passwords, tokens, `secrets.json` or other credentials.
+- Do not commit passwords, tokens, `secrets.json`, or other credentials.
+- Store local PostgreSQL credentials using User Secrets.
 - Check exported Postman collections for secrets before publishing.
 - MVC POST forms include antiforgery protection.
 - API requests are validated using DTOs and application services.
 - Do not run data-changing Postman tests against production databases.
-- Additional deployment hardening is required before public production use.
+- In-memory Output Cache is intended for the current coursework implementation; additional cache and deployment considerations apply to distributed production environments.
+- Additional security and deployment hardening are required before public production use.
+
+---
 
 ## Project Status
+
+### Implemented and Verified
 
 - **C1 — MVC Application:** implemented; video defense recorded.
 - **C5 — REST API:** implemented, manually tested, and committed to GitHub.
 - **QA1 — Automated Web API Testing:** implemented; 62/62 assertions passed in one iteration and 124/124 in two iterations.
 - **B1 — Pagination API:** implemented and verified.
-- **C8 — Interactive Stores Map:** implemented and manually verified; all 263 C# tests passed successfully.
+- **C8 — Interactive Stores Map:** implemented and manually verified.
+- **B9 — API Output Caching:** implemented; 263/263 existing C# tests and 48/48 B9 Postman assertions passed.
 
-Future development may include containerization, caching, CI/CD, and other coursework stages.
+### Remaining B9 Verification
+
+- Confirm actual Cache HIT through server-side diagnostics.
+- Finalize the Postman collection export.
+- Create the B9 Git commit and completion tag.
+
+### Planned Next Stages
+
+- **C4 — Docker Containerization:** containerize the ASP.NET Core application and PostgreSQL using Docker Compose.
+- **C3 — CI/CD:** configure automated build and deployment.
+- Prepare final video defenses for completed stages.
+
+The project will continue to be developed incrementally, with each coursework stage committed and tagged separately in Git.

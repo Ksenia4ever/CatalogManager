@@ -1,11 +1,11 @@
 {
   "info": {
-    "_postman_id": "e173a9c0-a52f-44f6-bb3c-5ea855dcebbb",
-    "name": "CatalogManager API Tests - Automated QA1 Copy",
-    "description": "Self-contained collection run: Categories -> Stores -> Products -> Cleanup. Run all folders in order with one iteration. Requires local HTTPS CatalogManager server. Main CRUD requests use generated IDs; negative requests assert expected 400/409 statuses.\nB1: pagination checks for categories, stores, products (skip/limit/nextLink), plus backward compatibility.",
+    "_postman_id": "fdd10ff9-165d-4909-8bce-6416620a0306",
+    "name": "CatalogManager API Tests - QA1 B1 B9",
+    "description": "Self-contained collection run: Categories -> Stores -> Products -> Cleanup. Run all folders in order with one iteration. Requires local HTTPS CatalogManager server. Main CRUD requests use generated IDs; negative requests assert expected 400/409 statuses.\nB1: pagination checks for categories, stores, products (skip/limit/nextLink), plus backward compatibility.\nB9: isolated temporary entities, repeated reads, write invalidation, paginated response checks and cleanup. Run B9 folder separately. Cache HIT needs server-side logging; HTTP assertions alone do not prove a cache hit.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "54782030",
-    "_collection_link": "https://go.postman.co/collection/54782030-e173a9c0-a52f-44f6-bb3c-5ea855dcebbb?source=collection_link"
+    "_collection_link": "https://go.postman.co/collection/54782030-fdd10ff9-165d-4909-8bce-6416620a0306?source=collection_link"
   },
   "item": [
     {
@@ -2876,6 +2876,858 @@
         }
       ],
       "description": "Read-only checks for skip, limit and nextLink. Run after QA1 cleanup; safe for collection Runner."
+    },
+    {
+      "name": "B9 - API Caching",
+      "item": [
+        {
+          "name": "01 Create temporary category",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const token = Date.now().toString() + Math.floor(Math.random() * 100000);",
+                  "pm.collectionVariables.set(\"b9Token\", token);",
+                  "for (const [key, prefix] of [[\"b9CategoryName\",\"B9Category\"],[\"b9StoreName\",\"B9Store\"],[\"b9ProductName\",\"B9Product\"]]) pm.collectionVariables.set(key, prefix + token);",
+                  "for (const [key, prefix] of [[\"b9CategoryNewName\",\"B9CategoryUpdated\"],[\"b9StoreNewName\",\"B9StoreUpdated\"],[\"b9ProductNewName\",\"B9ProductUpdated\"]]) pm.collectionVariables.set(key, prefix + token);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const x=pm.response.json(); pm.test(\"Category ID returned\",()=>pm.expect(x.id).to.be.a(\"number\")); pm.collectionVariables.set(\"b9CategoryId\",x.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{b9CategoryName}}\",\n  \"description\": \"B9 isolated test\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02 Create temporary store",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const x=pm.response.json(); pm.test(\"Store ID returned\",()=>pm.expect(x.id).to.be.a(\"number\")); pm.collectionVariables.set(\"b9StoreId\",x.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{b9StoreName}}\",\n  \"address\": \"B9 temporary address\",\n  \"latitude\": 50.45,\n  \"longitude\": 30.52\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/stores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03 Create temporary product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const x=pm.response.json(); pm.test(\"Product ID returned\",()=>pm.expect(x.id).to.be.a(\"number\")); pm.collectionVariables.set(\"b9ProductId\",x.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{b9ProductName}}\",\n  \"description\": \"B9 test\",\n  \"price\": 99.5,\n  \"categoryId\": {{b9CategoryId}},\n  \"storeId\": {{b9StoreId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04 Category - warm GET list",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const items=pm.response.json(); pm.test(\"Unpaginated response is array\",()=>pm.expect(items).to.be.an(\"array\")); pm.test(\"Temporary category visible\",()=>pm.expect(items.some(x=>x.id===Number(pm.collectionVariables.get(\"b9CategoryId\")) && x.name===pm.collectionVariables.get(\"b9CategoryName\"))).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05 Category - repeated GET list",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const items=pm.response.json(); pm.test(\"Repeated GET returns same test item\",()=>pm.expect(items.some(x=>x.id===Number(pm.collectionVariables.get(\"b9CategoryId\")) && x.name===pm.collectionVariables.get(\"b9CategoryName\"))).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06 Category - update and evict",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{b9CategoryNewName}}\",\n  \"description\": \"B9 updated\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{b9CategoryId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{b9CategoryId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "07 Category - GET after update",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const items=pm.response.json(); pm.test(\"GET reflects update (cache invalidated)\",()=>pm.expect(items.some(x=>x.id===Number(pm.collectionVariables.get(\"b9CategoryId\")) && x.name===pm.collectionVariables.get(\"b9CategoryNewName\"))).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "08 Category - paginated GET after update",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const page=pm.response.json(); pm.test(\"B1 pagination maintained\",()=>{pm.expect(page.items).to.be.an(\"array\");pm.expect(page.limit).to.eql(100);}); pm.test(\"Updated item appears in page (when within first 100)\",()=>{if(page.totalCount<=100) pm.expect(page.items.some(x=>x.id===Number(pm.collectionVariables.get(\"b9CategoryId\")) && x.name===pm.collectionVariables.get(\"b9CategoryNewName\"))).to.eql(true);});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories?skip=0&limit=100",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "100"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04 Store - warm GET list",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const items=pm.response.json(); pm.test(\"Unpaginated response is array\",()=>pm.expect(items).to.be.an(\"array\")); pm.test(\"Temporary store visible\",()=>pm.expect(items.some(x=>x.id===Number(pm.collectionVariables.get(\"b9StoreId\")) && x.name===pm.collectionVariables.get(\"b9StoreName\"))).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05 Store - repeated GET list",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const items=pm.response.json(); pm.test(\"Repeated GET returns same test item\",()=>pm.expect(items.some(x=>x.id===Number(pm.collectionVariables.get(\"b9StoreId\")) && x.name===pm.collectionVariables.get(\"b9StoreName\"))).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06 Store - update and evict",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{b9StoreNewName}}\",\n  \"address\": \"B9 new address\",\n  \"latitude\": 50.45,\n  \"longitude\": 30.52\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/{{b9StoreId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores",
+                "{{b9StoreId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "07 Store - GET after update",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const items=pm.response.json(); pm.test(\"GET reflects update (cache invalidated)\",()=>pm.expect(items.some(x=>x.id===Number(pm.collectionVariables.get(\"b9StoreId\")) && x.name===pm.collectionVariables.get(\"b9StoreNewName\"))).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "08 Store - paginated GET after update",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const page=pm.response.json(); pm.test(\"B1 pagination maintained\",()=>{pm.expect(page.items).to.be.an(\"array\");pm.expect(page.limit).to.eql(100);}); pm.test(\"Updated item appears in page (when within first 100)\",()=>{if(page.totalCount<=100) pm.expect(page.items.some(x=>x.id===Number(pm.collectionVariables.get(\"b9StoreId\")) && x.name===pm.collectionVariables.get(\"b9StoreNewName\"))).to.eql(true);});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores?skip=0&limit=100",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "100"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04 Product - warm GET list",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const items=pm.response.json(); pm.test(\"Unpaginated response is array\",()=>pm.expect(items).to.be.an(\"array\")); pm.test(\"Temporary product visible\",()=>pm.expect(items.some(x=>x.id===Number(pm.collectionVariables.get(\"b9ProductId\")) && x.name===pm.collectionVariables.get(\"b9ProductName\"))).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "05 Product - repeated GET list",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const items=pm.response.json(); pm.test(\"Repeated GET returns same test item\",()=>pm.expect(items.some(x=>x.id===Number(pm.collectionVariables.get(\"b9ProductId\")) && x.name===pm.collectionVariables.get(\"b9ProductName\"))).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "06 Product - update and evict",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{b9ProductNewName}}\",\n  \"description\": \"B9 updated\",\n  \"price\": 111.25,\n  \"categoryId\": {{b9CategoryId}},\n  \"storeId\": {{b9StoreId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{b9ProductId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "{{b9ProductId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "07 Product - GET after update",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const items=pm.response.json(); pm.test(\"GET reflects update (cache invalidated)\",()=>pm.expect(items.some(x=>x.id===Number(pm.collectionVariables.get(\"b9ProductId\")) && x.name===pm.collectionVariables.get(\"b9ProductNewName\"))).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "08 Product - paginated GET after update",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const page=pm.response.json(); pm.test(\"B1 pagination maintained\",()=>{pm.expect(page.items).to.be.an(\"array\");pm.expect(page.limit).to.eql(100);}); pm.test(\"Updated item appears in page (when within first 100)\",()=>{if(page.totalCount<=100) pm.expect(page.items.some(x=>x.id===Number(pm.collectionVariables.get(\"b9ProductId\")) && x.name===pm.collectionVariables.get(\"b9ProductNewName\"))).to.eql(true);});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products?skip=0&limit=100",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "skip",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "100"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "09 Product - delete temporary entity",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{b9ProductId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "{{b9ProductId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10 Product - GET list after deletion",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const items=pm.response.json(); pm.test(\"Deleted product absent (cache invalidated)\",()=>pm.expect(items.some(x=>x.id===Number(pm.collectionVariables.get(\"b9ProductId\")))).to.eql(false));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "09 Store - delete temporary entity",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/{{b9StoreId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores",
+                "{{b9StoreId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10 Store - GET list after deletion",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const items=pm.response.json(); pm.test(\"Deleted store absent (cache invalidated)\",()=>pm.expect(items.some(x=>x.id===Number(pm.collectionVariables.get(\"b9StoreId\")))).to.eql(false));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "09 Category - delete temporary entity",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{b9CategoryId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "{{b9CategoryId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10 Category - GET list after deletion",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const items=pm.response.json(); pm.test(\"Deleted category absent (cache invalidated)\",()=>pm.expect(items.some(x=>x.id===Number(pm.collectionVariables.get(\"b9CategoryId\")))).to.eql(false));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categories"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Run folder with 1 iteration and default request order. Creates isolated category/store/product, verifies GET reads and updates invalidate responses, then cleans up. Do not run this folder concurrently. Cache HIT must be confirmed from server debug logs."
     }
   ],
   "variable": [
@@ -2897,6 +3749,46 @@
     },
     {
       "key": "secondCategoryName",
+      "value": ""
+    },
+    {
+      "key": "b9Token",
+      "value": ""
+    },
+    {
+      "key": "b9CategoryName",
+      "value": ""
+    },
+    {
+      "key": "b9StoreName",
+      "value": ""
+    },
+    {
+      "key": "b9ProductName",
+      "value": ""
+    },
+    {
+      "key": "b9CategoryNewName",
+      "value": ""
+    },
+    {
+      "key": "b9StoreNewName",
+      "value": ""
+    },
+    {
+      "key": "b9ProductNewName",
+      "value": ""
+    },
+    {
+      "key": "b9CategoryId",
+      "value": ""
+    },
+    {
+      "key": "b9StoreId",
+      "value": ""
+    },
+    {
+      "key": "b9ProductId",
       "value": ""
     }
   ]

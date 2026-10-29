@@ -1,4 +1,5 @@
-﻿using CatalogManager.DTOs.Pagination;
+﻿using Microsoft.AspNetCore.OutputCaching;
+using CatalogManager.DTOs.Pagination;
 using Microsoft.AspNetCore.Http;
 using CatalogManager.Application.Interfaces;
 using CatalogManager.Domain.Entities;
@@ -12,15 +13,18 @@ namespace CatalogManager.ApiControllers;
 public class StoresApiController : ControllerBase
 {
     private readonly IStoreService _service;
+    private readonly IOutputCacheStore? _cache;
 
-    public StoresApiController(IStoreService service)
+    public StoresApiController(IStoreService service, IOutputCacheStore? cache = null)
     {
         _service = service;
+        _cache = cache;
     }
 
     // GET api/stores?skip=0&limit=10 (B1)
     // Without pagination parameters, preserve the original C5 array response.
     [HttpGet]
+    [OutputCache(PolicyName = "StoresCache")]
     public async Task<ActionResult<IEnumerable<StoreResponseDto>>> GetAll()
     {
         var request = ControllerContext.HttpContext?.Request;
@@ -65,6 +69,7 @@ public class StoresApiController : ControllerBase
 
     // GET api/stores/5
     [HttpGet("{id:int}")]
+    [OutputCache(PolicyName = "StoresCache")]
     public async Task<ActionResult<StoreResponseDto>> GetById(int id)
     {
         var store = await _service.GetByIdAsync(id);
@@ -91,6 +96,7 @@ public class StoresApiController : ControllerBase
         try
         {
             await _service.CreateAsync(store);
+            await EvictCacheAsync();
         }
         catch (ArgumentException ex)
         {
@@ -123,6 +129,8 @@ public class StoresApiController : ControllerBase
 
             if (!updated)
                 return NotFound();
+
+            await EvictCacheAsync();
         }
         catch (ArgumentException ex)
         {
@@ -151,7 +159,17 @@ public class StoresApiController : ControllerBase
             });
         }
 
+        await EvictCacheAsync();
         return NoContent();
+    }
+
+    // Invalidate cached API responses only after successful mutations.
+    private async Task EvictCacheAsync()
+    {
+        if (_cache is not null)
+        {
+            await _cache.EvictByTagAsync("stores", HttpContext.RequestAborted);
+        }
     }
 
     private static StoreResponseDto MapToResponse(Store store)

@@ -1,4 +1,5 @@
-﻿using CatalogManager.DTOs.Pagination;
+﻿using Microsoft.AspNetCore.OutputCaching;
+using CatalogManager.DTOs.Pagination;
 using Microsoft.AspNetCore.Http;
 using CatalogManager.Application.Interfaces;
 using CatalogManager.Domain.Entities;
@@ -12,15 +13,18 @@ namespace CatalogManager.ApiControllers;
 public class ProductsApiController : ControllerBase
 {
     private readonly IProductService _service;
+    private readonly IOutputCacheStore? _cache;
 
-    public ProductsApiController(IProductService service)
+    public ProductsApiController(IProductService service, IOutputCacheStore? cache = null)
     {
         _service = service;
+        _cache = cache;
     }
 
     // GET api/products?skip=0&limit=10 (B1)
     // Without pagination parameters, preserve the original C5 array response.
     [HttpGet]
+    [OutputCache(PolicyName = "ProductsCache")]
     public async Task<ActionResult<IEnumerable<ProductResponseDto>>> GetAll()
     {
         var request = ControllerContext.HttpContext?.Request;
@@ -65,6 +69,7 @@ public class ProductsApiController : ControllerBase
 
     // GET api/products/5
     [HttpGet("{id:int}")]
+    [OutputCache(PolicyName = "ProductsCache")]
     public async Task<ActionResult<ProductResponseDto>> GetById(int id)
     {
         var product = await _service.GetByIdAsync(id);
@@ -93,6 +98,7 @@ public class ProductsApiController : ControllerBase
         try
         {
             await _service.CreateAsync(product);
+            await EvictCacheAsync();
         }
         catch (ArgumentException ex)
         {
@@ -127,6 +133,8 @@ public class ProductsApiController : ControllerBase
 
             if (!updated)
                 return NotFound();
+
+            await EvictCacheAsync();
         }
         catch (ArgumentException ex)
         {
@@ -150,7 +158,17 @@ public class ProductsApiController : ControllerBase
         if (!deleted)
             return NotFound();
 
+        await EvictCacheAsync();
         return NoContent();
+    }
+
+    // Invalidate cached API responses only after successful mutations.
+    private async Task EvictCacheAsync()
+    {
+        if (_cache is not null)
+        {
+            await _cache.EvictByTagAsync("products", HttpContext.RequestAborted);
+        }
     }
 
     private static ProductResponseDto MapToResponse(Product product)

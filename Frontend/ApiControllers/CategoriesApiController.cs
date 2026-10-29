@@ -1,4 +1,5 @@
-﻿using CatalogManager.DTOs.Pagination;
+﻿using Microsoft.AspNetCore.OutputCaching;
+using CatalogManager.DTOs.Pagination;
 using Microsoft.AspNetCore.Http;
 using CatalogManager.Application.Interfaces;
 using CatalogManager.Application.Exceptions;
@@ -13,15 +14,18 @@ namespace CatalogManager.ApiControllers;
 public class CategoriesApiController : ControllerBase
 {
     private readonly ICategoryService _service;
+    private readonly IOutputCacheStore? _cache;
 
-    public CategoriesApiController(ICategoryService service)
+    public CategoriesApiController(ICategoryService service, IOutputCacheStore? cache = null)
     {
         _service = service;
+        _cache = cache;
     }
 
     // GET api/categories?skip=0&limit=10 (B1)
     // Without pagination parameters, preserve the original C5 array response.
     [HttpGet]
+    [OutputCache(PolicyName = "CategoriesCache")]
     public async Task<ActionResult<IEnumerable<CategoryResponseDto>>> GetAll()
     {
         var request = ControllerContext.HttpContext?.Request;
@@ -66,6 +70,7 @@ public class CategoriesApiController : ControllerBase
 
     // GET api/categories/5
     [HttpGet("{id:int}")]
+    [OutputCache(PolicyName = "CategoriesCache")]
     public async Task<ActionResult<CategoryResponseDto>> GetById(int id)
     {
         var category = await _service.GetByIdAsync(id);
@@ -90,6 +95,7 @@ public class CategoriesApiController : ControllerBase
         try
         {
             await _service.CreateAsync(category);
+            await EvictCacheAsync();
         }
         catch (DuplicateCategoryNameException ex)
         {
@@ -126,6 +132,8 @@ public class CategoriesApiController : ControllerBase
 
             if (!updated)
                 return NotFound();
+
+            await EvictCacheAsync();
         }
         catch (DuplicateCategoryNameException ex)
         {
@@ -158,7 +166,17 @@ public class CategoriesApiController : ControllerBase
             });
         }
 
+        await EvictCacheAsync();
         return NoContent();
+    }
+
+    // Invalidate cached API responses only after successful mutations.
+    private async Task EvictCacheAsync()
+    {
+        if (_cache is not null)
+        {
+            await _cache.EvictByTagAsync("categories", HttpContext.RequestAborted);
+        }
     }
 
     private static CategoryResponseDto MapToResponse(
