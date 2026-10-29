@@ -1,4 +1,9 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="Frontend/.dockerignore" />
+    <File Path="Frontend/.env.example" />
+    <File Path="Frontend/compose.yaml" />
+  </Folder>
   <Project Path="Application/CatalogManager.Application.csproj" />
   <Project Path="Domain/CatalogManager.Domain.csproj" />
   <Project Path="Frontend/CatalogManager.csproj" />

@@ -1,0 +1,17 @@
+**/bin/
+**/obj/
+**/.vs/
+**/TestResults/
+**/CoverageReport/
+**/.git/
+**/.idea/
+**/node_modules/
+.git/
+.gitignore
+.env
+.env.*
+!.env.example
+*.user
+*.suo
+*.zip
+*.log
