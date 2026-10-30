@@ -8,6 +8,37 @@
     var categoryName = Model.Category?.Name ?? "Uncategorized";
     var storeName = Model.Store?.Name ?? "Store unavailable";
     var storeAddress = Model.Store?.Address ?? "Address is not available";
+
+    // Unique SEO metadata for each real product; no hard-coded product IDs.
+    var seoTitle = $"{Model.Name} | {categoryName} | CatalogManager";
+    var rawDescription = hasDescription
+        ? Model.Description!.Trim()
+        : $"Discover {Model.Name}, its price, category and store in CatalogManager.";
+    var seoDescription = rawDescription.Length > 155
+        ? rawDescription[..152].TrimEnd() + "..."
+        : rawDescription;
+    var canonicalUrl = Url.Action("Details", "Products", new { id = Model.Id }, Context.Request.Scheme)
+        ?? $"{Context.Request.Scheme}://{Context.Request.Host}/Products/Details/{Model.Id}";
+    var imageAbsoluteUrl = Uri.TryCreate(Model.ImageUrl, UriKind.Absolute, out var imageUri)
+        && (imageUri.Scheme == Uri.UriSchemeHttp || imageUri.Scheme == Uri.UriSchemeHttps)
+        ? imageUri.ToString()
+        : null;
+}
+
+@section SeoHead {
+    <meta name="description" content="@seoDescription" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="@canonicalUrl" />
+    <meta property="og:type" content="product" />
+    <meta property="og:site_name" content="CatalogManager" />
+    <meta property="og:title" content="@seoTitle" />
+    <meta property="og:description" content="@seoDescription" />
+    <meta property="og:url" content="@canonicalUrl" />
+    @if (!string.IsNullOrEmpty(imageAbsoluteUrl))
+    {
+        <meta property="og:image" content="@imageAbsoluteUrl" />
+    }
+    <meta name="twitter:card" content="@(hasImage ? "summary_large_image" : "summary")" />
 }
 
 @section Scripts {
