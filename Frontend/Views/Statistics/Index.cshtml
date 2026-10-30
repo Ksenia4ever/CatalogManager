@@ -1,0 +1,53 @@
+﻿@{
+    ViewData["Title"] = "Catalog Statistics";
+}
+
+<link rel="stylesheet" href="~/css/statistics.css" asp-append-version="true" />
+
+<section class="statistics-page" aria-labelledby="statisticsTitle">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+        <div>
+            <p class="text-primary fw-bold text-uppercase small mb-1">F1 · Data visualization</p>
+            <h1 id="statisticsTitle" class="fw-bold mb-1">Catalog Statistics</h1>
+            <p class="text-secondary mb-0">Live charts based on CatalogManager products, categories and stores.</p>
+        </div>
+        <button id="statisticsRefresh" class="btn btn-primary" type="button">Refresh statistics</button>
+    </div>
+
+    <div id="statisticsStatus" class="alert alert-info" role="status" aria-live="polite">Loading statistics...</div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4"><div class="stat-tile"><span>Products</span><strong id="totalProducts">—</strong></div></div>
+        <div class="col-md-4"><div class="stat-tile"><span>Categories</span><strong id="totalCategories">—</strong></div></div>
+        <div class="col-md-4"><div class="stat-tile"><span>Stores</span><strong id="totalStores">—</strong></div></div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="chart-panel">
+                <h2 class="h5 fw-bold">Products by category</h2>
+                <p class="text-secondary small">How many products belong to each category.</p>
+                <div class="chart-wrap"><canvas id="categoryChart" role="img" aria-label="Bar chart of products by category"></canvas></div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="chart-panel">
+                <h2 class="h5 fw-bold">Products by store</h2>
+                <p class="text-secondary small">Product distribution across stores.</p>
+                <div class="chart-wrap"><canvas id="storeChart" role="img" aria-label="Doughnut chart of products by store"></canvas></div>
+            </div>
+        </div>
+        <div class="col-12">
+            <div class="chart-panel">
+                <h2 class="h5 fw-bold">Price distribution</h2>
+                <p class="text-secondary small">Number of products in each price range (UAH).</p>
+                <div class="chart-wrap chart-wrap-short"><canvas id="priceChart" role="img" aria-label="Bar chart of product prices"></canvas></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <script src="~/js/statistics.js" asp-append-version="true"></script>
+}

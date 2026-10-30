@@ -14,13 +14,14 @@ The project was developed for the **Web Technologies** coursework:
 - **C4 — Docker Containerization:** containerized ASP.NET Core application and PostgreSQL using Docker Compose.
 - **C6 — Bootstrap Landing Page:** responsive product catalog and individual product landing pages.
 - **C7 — SEO Optimization:** product-specific SEO metadata, canonical URLs, Open Graph tags, robots.txt, and Lighthouse auditing.
+- **F1 — Data Visualization:** interactive statistical dashboard using Chart.js and data retrieved from PostgreSQL.
 
 ---
 
 ## Features
 
 - **Categories:** create, read, update, and delete categories; duplicate names are rejected.
-- **Stores:** manage store names, addresses, and geographic coordinates.
+- **Stores:** manage names, addresses, and geographic coordinates.
 - **Products:** manage names, descriptions, prices, optional image URLs, categories, and stores.
 - **Validation:** required fields, product prices, coordinates, and related entity IDs.
 - **Deletion rules:** categories and stores cannot be deleted while referenced by products.
@@ -31,7 +32,8 @@ The project was developed for the **Web Technologies** coursework:
 - **API Caching:** 30-second in-memory Output Cache with invalidation after successful API modifications.
 - **Containerization:** Docker Compose with ASP.NET Core, PostgreSQL, and persistent storage.
 - **Product Landing Pages:** responsive Bootstrap product cards and individual product presentation pages.
-- **SEO Optimization:** metadata, canonical URLs, social sharing tags, robots.txt, and Lighthouse SEO auditing.
+- **SEO Optimization:** metadata, canonical URLs, social sharing tags, robots.txt, and Lighthouse auditing.
+- **Statistics Dashboard:** summary indicators, three interactive charts, and asynchronous data refreshing.
 - **Testing:** xUnit, Moq, HTTP integration tests, and automated Postman collections.
 
 ---
@@ -41,6 +43,7 @@ The project was developed for the **Web Technologies** coursework:
 - C# / .NET 10
 - ASP.NET Core MVC, Web API, and Razor Views
 - Bootstrap, HTML, CSS, and JavaScript
+- Chart.js
 - Entity Framework Core 10
 - PostgreSQL 17 and Npgsql
 - ASP.NET Core Output Caching
@@ -62,6 +65,7 @@ CatalogManager/
 ├── CatalogManager.slnx
 ├── Frontend/
 │   ├── Controllers/
+│   │   └── StatisticsController.cs
 │   ├── ApiControllers/
 │   ├── Models/
 │   ├── DTOs/
@@ -70,14 +74,18 @@ CatalogManager/
 │   │   │   ├── Index.cshtml
 │   │   │   └── Details.cshtml
 │   │   ├── StoresMap/
+│   │   ├── Statistics/
+│   │   │   └── Index.cshtml
 │   │   └── Shared/
 │   │       └── _Layout.cshtml
 │   ├── wwwroot/
 │   │   ├── js/
-│   │   │   └── stores-map.js
+│   │   │   ├── stores-map.js
+│   │   │   └── statistics.js
 │   │   ├── css/
 │   │   │   ├── stores-map.css
-│   │   │   └── product-landing.css
+│   │   │   ├── product-landing.css
+│   │   │   └── statistics.css
 │   │   └── robots.txt
 │   └── Program.cs
 ├── Application/
@@ -85,6 +93,8 @@ CatalogManager/
 ├── Infrastructure/
 ├── UnitTests/
 ├── IntegrationTests/
+│   └── Tests/
+│       └── StatisticsIntegrationTests.cs
 ├── Postman/
 │   └── CatalogManager_QA1_B1_B9.postman_collection.json
 ├── Dockerfile
@@ -125,6 +135,8 @@ MVC uses dedicated form ViewModels:
 - `ProductFormViewModel`
 
 REST API endpoints use separate request and response DTOs.
+
+The statistics dashboard reads existing catalog data and transforms it into aggregated information for visual presentation.
 
 ---
 
@@ -794,8 +806,6 @@ Allow: /
 
 This does not force search engines to index the site and does not grant public Internet access to a localhost application.
 
-The file is intended as part of the website's technical SEO preparation.
-
 ### Implementation Files
 
 | File | Responsibility |
@@ -803,13 +813,13 @@ The file is intended as part of the website's technical SEO preparation.
 | `Frontend/Views/Shared/_Layout.cshtml` | Rendering shared SEO metadata |
 | `Frontend/Views/Products/Details.cshtml` | Product-specific SEO information |
 | `Frontend/wwwroot/robots.txt` | Search crawler instructions |
-| `Frontend/wwwroot/css/product-landing.css` | Existing C6 presentation styling, retained |
+| `Frontend/wwwroot/css/product-landing.css` | Existing C6 styling |
 
 ### SEO Audit Using Google Lighthouse
 
-SEO verification was performed using the Lighthouse tool integrated into Google Chrome DevTools.
+The SEO audit was performed using Google Chrome DevTools Lighthouse.
 
-The audit was run against an existing product details page:
+Audited page:
 
 `https://localhost:44361/Products/Details/1`
 
@@ -840,35 +850,181 @@ It does not guarantee search engine indexing or ranking.
 
 ### Functional and Regression Testing
 
-The existing C# test suite was executed after the C7 implementation.
+The existing C# test suite passed after C7:
+
+- 208 unit tests.
+- 55 integration tests.
+- **263 tests passed in total.**
+
+The `/robots.txt` endpoint was successfully opened in Chrome.
+
+No additional database migrations were required.
+
+### Limitations
+
+- Lighthouse was run against a local application.
+- The score applies to the audited page and selected configuration.
+- Search engine indexing cannot be demonstrated from localhost.
+- Lighthouse covers basic technical SEO checks, not every ranking factor.
+- Public deployment would require additional hosting and security configuration.
+
+---
+
+## F1 — Data Visualization
+
+### Overview
+
+F1 introduces a statistical visualization dashboard into CatalogManager using **Chart.js**.
+
+The dashboard presents aggregated information about products, categories, and stores in an interactive format.
+
+Instead of manually reviewing individual records, users can quickly understand the structure of the product catalog through summary indicators and charts.
+
+The dashboard reuses existing application data stored in PostgreSQL.
+
+No new database tables, migrations, or separate backend project are required.
+
+### Statistics Page
+
+The statistics dashboard is available at:
+
+`/Statistics`
+
+The page can be opened through the application's navigation menu.
+
+It uses Bootstrap for page layout and Chart.js for rendering statistical diagrams.
+
+### Statistics Data Endpoint
+
+The frontend retrieves the statistics asynchronously through:
+
+```http
+GET /Statistics/Data
+```
+
+The endpoint returns JSON data derived from the existing catalog records.
+
+JavaScript uses the Fetch API to retrieve this information and update the dashboard without navigating to another page.
+
+### Summary Indicators
+
+The dashboard displays summary information about the product catalog:
+
+- Total number of products.
+- Total number of categories.
+- Total number of stores.
+
+These indicators help users understand the current size of the catalog.
+
+### Implemented Charts
+
+**1. Products by Category**
+
+Displays the number of products belonging to each category.
+
+This visualization helps compare the distribution of products across categories.
+
+**2. Products by Store**
+
+Displays how many products are associated with each store.
+
+This visualization helps identify stores with larger or smaller product assortments.
+
+**3. Product Price Distribution**
+
+Groups products into price ranges and displays the number of products in each range.
+
+This visualization helps analyze the overall distribution of product prices.
+
+The charts are generated from actual catalog data rather than hard-coded demonstration values.
+
+### Interactive Features
+
+- Automatic statistics loading when the page opens.
+- Asynchronous retrieval of JSON data.
+- Chart rendering using Chart.js.
+- Dashboard summary indicators.
+- Refresh functionality for updating displayed statistics.
+- Loading and error handling.
+- Responsive layout using Bootstrap and custom CSS.
+- Navigation through the existing MVC application.
+
+### Architecture
+
+The data flow is:
+
+Browser → Statistics Page → JavaScript Fetch API → StatisticsController → Application Data → PostgreSQL
+
+The controller provides the statistics page and a separate JSON endpoint.
+
+The JavaScript file processes the returned JSON and renders the diagrams.
+
+This approach separates data retrieval from presentation logic.
+
+### Implementation Files
+
+| File | Responsibility |
+|---|---|
+| `Frontend/Controllers/StatisticsController.cs` | Statistics page and JSON data endpoint |
+| `Frontend/Views/Statistics/Index.cshtml` | Dashboard Razor View |
+| `Frontend/wwwroot/js/statistics.js` | Fetch requests and Chart.js initialization |
+| `Frontend/wwwroot/css/statistics.css` | Dashboard styling and responsiveness |
+| `Frontend/Views/Shared/_Layout.cshtml` | Statistics navigation link |
+| `IntegrationTests/Tests/StatisticsIntegrationTests.cs` | HTTP integration tests for F1 |
+
+### Chart.js Integration
+
+Chart.js is a JavaScript charting library used to visualize data.
+
+The application uses it to render interactive diagrams on HTML canvas elements.
+
+The chart data is generated dynamically from the JSON response.
+
+This means that changes in the underlying product catalog can be reflected in the dashboard after updating the statistics.
+
+### Testing
+
+Four new integration test cases were added for the F1 functionality.
+
+The tests use the existing ASP.NET Core integration testing infrastructure based on `WebApplicationFactory`.
+
+The complete regression test suite was executed after implementing F1.
+
+### Verified F1 Test Results
 
 | Test Type | Passed |
 |---|---:|
 | Unit Tests | 208 |
-| Integration Tests | 55 |
-| **Total** | **263** |
+| Integration Tests | 59 |
+| **Total** | **267** |
+| Failed | **0** |
+| Skipped | **0** |
 
-**Result: 263 passed, 0 failed, 0 skipped.**
+**Result: 267 passed, 0 failed, 0 skipped.**
 
-The `/robots.txt` endpoint was also opened successfully in Google Chrome.
+Verified in Visual Studio on **30 October 2026**.
 
-The product landing page was rendered correctly with the existing Bootstrap interface.
+Compared with the previous confirmed result of 263 tests, the F1 implementation adds four integration test cases.
+
+The statistics dashboard was also reported as working correctly in the running application.
 
 ### Limitations
 
-- The Lighthouse audit was performed locally, not on a publicly deployed website.
-- The score applies to the audited product page and configuration.
-- Search engine indexing cannot be demonstrated from localhost.
-- Lighthouse covers basic technical SEO checks, not every search ranking factor.
-- Production SEO would additionally require a public domain, reliable hosting, and continued content and performance monitoring.
+- The dashboard displays statistics derived from the current catalog data.
+- Data is refreshed through HTTP requests rather than a real-time push connection.
+- Chart.js requires the corresponding JavaScript resources to load successfully.
+- The statistics page is intended for catalog visualization rather than advanced business intelligence.
+- No new database schema or migration is required.
 
-### C7 Conclusion
+### F1 Conclusion
 
-C7 successfully enhances the product landing pages with technical SEO metadata and crawler instructions.
+F1 successfully extends CatalogManager with an interactive statistical dashboard.
 
-The implementation preserves existing product functionality and passed the complete C# regression test suite.
+It provides product distribution visualizations, summary indicators, and asynchronous data updates.
 
-**Verified Lighthouse SEO score: 100/100.**
+The implementation preserves the functionality of the previous coursework stages.
+
+**All 267 automated C# tests passed successfully.**
 
 ---
 
@@ -887,7 +1043,7 @@ It combines automated QA1, pagination, and API caching scenarios.
 3. Check the collection variable `baseUrl`.
 4. Use the correct local API address.
 5. Run the relevant folder through Collection Runner.
-6. Review Passed, Failed, Errors, and request results.
+6. Review Passed, Failed, Errors, and individual request results.
 
 The original IIS Express environment used:
 
@@ -956,7 +1112,7 @@ Integration tests use a separate database:
 
 `CatalogManagerTestDb`
 
-Configure the connection using User Secrets:
+Configure its connection using User Secrets:
 
 ```bash
 dotnet user-secrets set "ConnectionStrings:TestConnection" "Host=localhost;Port=5432;Database=CatalogManagerTestDb;Username=postgres;Password=YOUR_PASSWORD" --project IntegrationTests
@@ -977,12 +1133,12 @@ Alternatively, use Visual Studio:
 | Test Type | Passed |
 |---|---:|
 | Unit Tests | 208 |
-| Integration Tests | 55 |
-| **Total** | **263** |
+| Integration Tests | 59 |
+| **Total** | **267** |
 
-**263 passed, 0 failed, 0 skipped.**
+**267 passed, 0 failed, 0 skipped.**
 
-Verified on **30 October 2026** after implementing C7.
+Verified on **30 October 2026**, after implementing F1.
 
 ---
 
@@ -1016,7 +1172,7 @@ The previously reviewed pre-C5 coverage report showed:
 - Branch coverage: 77.7%.
 - Application layer line coverage: 100%.
 
-These are historical results and are not claimed as current C7 coverage measurements.
+These are historical results and are not claimed as current F1 coverage measurements.
 
 ---
 
@@ -1049,18 +1205,18 @@ These are historical results and are not claimed as current C7 coverage measurem
 - **B9 — API Output Caching:** implemented; 48/48 Postman assertions passed.
 - **C4 — Docker Containerization:** built and verified with PostgreSQL 17 and persistent storage.
 - **C6 — Bootstrap Landing Page:** implemented and verified.
-- **C7 — SEO Optimization:** implemented; Lighthouse SEO 100/100; all 263 C# tests passed.
+- **C7 — SEO Optimization:** implemented; Lighthouse SEO 100/100.
+- **F1 — Data Visualization:** implemented; three Chart.js diagrams, a statistics dashboard, and 267/267 C# tests passed.
 
 ### Remaining Verification and Repository Tasks
 
 - B9: independently confirm actual Cache HIT using server-side diagnostics.
-- Verify that `.env` files are not tracked in Git.
+- Verify that local `.env` files are not tracked in Git.
 - Rotate any credentials exposed in screenshots or logs.
-- Commit C7 changes and tag the completed stage.
+- Finalize the F1 commit, README update, and completion tag.
 
 ### Planned Next Stages
 
-- **F1 — Data Visualization:** add charts and statistical visualizations.
 - **QA2 — End-to-End Testing:** implement automated browser-based tests and evaluate coverage.
 - **C9 — Analytics Integration:** optional deferred stage.
 
