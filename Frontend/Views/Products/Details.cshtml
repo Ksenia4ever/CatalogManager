@@ -1,40 +1,142 @@
-﻿
-@model CatalogManager.Domain.Entities.Product
+﻿@model CatalogManager.Domain.Entities.Product
 
 @{
-    ViewData["Title"] = "Product Details";
+    ViewData["Title"] = Model.Name;
+
+    var hasImage = !string.IsNullOrWhiteSpace(Model.ImageUrl);
+    var hasDescription = !string.IsNullOrWhiteSpace(Model.Description);
+    var categoryName = Model.Category?.Name ?? "Uncategorized";
+    var storeName = Model.Store?.Name ?? "Store unavailable";
+    var storeAddress = Model.Store?.Address ?? "Address is not available";
 }
 
-<h1>Product Details</h1>
-
-@if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
-{
-    <img src="@Model.ImageUrl" alt="@Model.Name"
-         class="img-thumbnail mb-3"
-         style="max-width:250px;max-height:250px" />
+@section Scripts {
+    <script>
+        document.querySelectorAll('[data-product-photo]').forEach(function (photo) {
+            function showFallback() {
+                photo.classList.add('d-none');
+                const fallback = photo.parentElement.querySelector('[data-image-fallback]');
+                if (fallback) fallback.classList.remove('d-none');
+            }
+            photo.addEventListener('error', showFallback);
+            if (photo.complete && photo.naturalWidth === 0) showFallback();
+        });
+    </script>
 }
 
-<dl class="row">
-    <dt class="col-sm-3">ID</dt>
-    <dd class="col-sm-9">@Model.Id</dd>
+<link rel="stylesheet" href="~/css/product-landing.css" asp-append-version="true" />
 
-    <dt class="col-sm-3">Name</dt>
-    <dd class="col-sm-9">@Model.Name</dd>
+<main class="product-landing" id="top">
+    <nav aria-label="Breadcrumb" class="mb-4">
+        <ol class="breadcrumb product-breadcrumb mb-0">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Home</a></li>
+            <li class="breadcrumb-item"><a asp-controller="Products" asp-action="Index">Products</a></li>
+            <li class="breadcrumb-item active" aria-current="page">@Model.Name</li>
+        </ol>
+    </nav>
 
-    <dt class="col-sm-3">Description</dt>
-    <dd class="col-sm-9">@Model.Description</dd>
+    <section class="product-hero rounded-4 overflow-hidden" aria-labelledby="product-title">
+        <div class="row g-0 align-items-stretch">
+            <div class="col-lg-6">
+                <div class="product-photo-wrap">
+                    @if (hasImage)
+                    {
+                        <img src="@Model.ImageUrl"
+                             alt="Photo of @Model.Name"
+                             class="product-photo"
+                             data-product-photo
+                             loading="eager" />
+                    }
+                    <div class="product-photo-fallback @(hasImage ? "d-none" : "")" data-image-fallback>
+                        <svg width="112" height="112" viewBox="0 0 112 112" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <rect x="14" y="20" width="84" height="72" rx="13" stroke="currentColor" stroke-width="4" />
+                            <circle cx="42" cy="43" r="9" stroke="currentColor" stroke-width="4" />
+                            <path d="M24 80L47 57L62 71L74 59L88 80" stroke="currentColor" stroke-width="4" stroke-linejoin="round" stroke-linecap="round" />
+                        </svg>
+                        <span>No product image available</span>
+                    </div>
+                    <span class="product-photo-label">Product #@Model.Id</span>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="product-hero-content d-flex flex-column justify-content-center h-100">
+                    <span class="product-eyebrow">CATALOGMANAGER • PRODUCT SHOWCASE</span>
+                    <span class="product-category-tag align-self-start">@categoryName</span>
+                    <h1 class="product-display-title" id="product-title">@Model.Name</h1>
+                    <p class="product-hero-summary">
+                        @(hasDescription ? Model.Description : "Explore the product details, price and store information below.")
+                    </p>
+                    <div class="product-price-block">
+                        <span class="product-price-label">Price</span>
+                        <div class="product-price">@Model.Price.ToString("N2") <span class="product-price-currency">UAH</span></div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 mt-4">
+                        <a href="#store-contact" class="btn btn-primary btn-lg px-4">Store details</a>
+                        <a href="#about-product" class="btn btn-outline-dark btn-lg px-4">Learn more</a>
+                    </div>
+                    <div class="product-small-note mt-3">Information is loaded from the CatalogManager database.</div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-    <dt class="col-sm-3">Price</dt>
-    <dd class="col-sm-9">@Model.Price.ToString("N2")</dd>
+    <div class="row g-4 mt-2 mt-lg-4">
+        <div class="col-lg-8">
+            <section id="about-product" class="product-content-card mb-4" aria-labelledby="about-heading">
+                <div class="product-section-kicker">THE DETAILS</div>
+                <h2 id="about-heading" class="product-section-title">About this product</h2>
+                @if (hasDescription)
+                {
+                    <p class="product-description">@Model.Description</p>
+                }
+                else
+                {
+                    <p class="product-description text-secondary">No detailed description has been provided for this product yet.</p>
+                }
+            </section>
 
-    <dt class="col-sm-3">Category</dt>
-    <dd class="col-sm-9">@Model.Category?.Name</dd>
+            <section class="product-content-card mb-4" aria-labelledby="specs-heading">
+                <div class="product-section-kicker">AT A GLANCE</div>
+                <h2 id="specs-heading" class="product-section-title">Product information</h2>
+                <dl class="product-specs mb-0">
+                    <div><dt>Product ID</dt><dd>@Model.Id</dd></div>
+                    <div><dt>Category</dt><dd>@categoryName</dd></div>
+                    <div><dt>Price</dt><dd>@Model.Price.ToString("N2") UAH</dd></div>
+                    <div><dt>Available at</dt><dd>@storeName</dd></div>
+                </dl>
+            </section>
 
-    <dt class="col-sm-3">Store</dt>
-    <dd class="col-sm-9">@Model.Store?.Name</dd>
-</dl>
+            <section class="product-content-card mb-4" aria-labelledby="discover-heading">
+                <div class="product-section-kicker">EXPLORE MORE</div>
+                <h2 id="discover-heading" class="product-section-title">Keep exploring the catalog</h2>
+                <p class="text-secondary mb-3">Browse other products or return to the full product list.</p>
+                <a asp-controller="Products" asp-action="Index" class="btn btn-outline-primary">Browse all products</a>
+            </section>
+        </div>
 
-<a asp-action="Edit" asp-route-id="@Model.Id"
-   class="btn btn-warning">Edit</a>
+        <div class="col-lg-4">
+            <aside id="store-contact" class="product-store-card" aria-labelledby="store-heading">
+                <div class="product-section-kicker">WHERE TO FIND IT</div>
+                <h2 id="store-heading" class="product-section-title">Store &amp; contact</h2>
+                <p class="product-store-label mb-1">Store</p>
+                <p class="product-store-value">@storeName</p>
+                <p class="product-store-label mb-1">Address</p>
+                <p class="product-store-address">@storeAddress</p>
+                <div class="d-grid gap-2">
+                    <a asp-controller="Stores" asp-action="Details" asp-route-id="@Model.StoreId" class="btn btn-primary">View store details</a>
+                    <a asp-controller="StoresMap" asp-action="Index" class="btn btn-outline-primary">Find store on map</a>
+                </div>
+                <p class="product-contact-note mb-0 mt-3">Store contact details are limited to information available in the catalog.</p>
+            </aside>
+        </div>
+    </div>
 
-<a asp-action="Index" class="btn btn-secondary">Back</a>
+    <section class="product-end-banner rounded-4 mb-4" aria-label="Back to catalog">
+        <div>
+            <span class="product-section-kicker">READY TO DISCOVER MORE?</span>
+            <h2 class="mb-2">Discover the rest of the collection</h2>
+            <p class="mb-0">Continue exploring categories, products and stores.</p>
+        </div>
+        <a asp-controller="Products" asp-action="Index" class="btn btn-light btn-lg">All products</a>
+    </section>
+</main>

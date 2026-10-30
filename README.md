@@ -1,3 +1,4 @@
+
 # CatalogManager
 
 CatalogManager is a layered **ASP.NET Core MVC + REST API** application for managing a product catalog. It supports categories, stores, and products, persists data in PostgreSQL using Entity Framework Core, and includes automated C# tests and a repeatable Postman API test suite.
@@ -11,6 +12,7 @@ The project was developed for the **Web Technologies** coursework:
 - **C8 — External API Integration:** interactive stores map powered by OpenStreetMap and Leaflet.
 - **B9 — API Output Caching:** in-memory response caching with expiration and tag-based invalidation.
 - **C4 — Docker Containerization:** containerized ASP.NET Core application and PostgreSQL database using Docker Compose.
+- **C6 — Bootstrap Landing Page:** responsive product catalog and individual product landing pages with images, descriptions, prices, and related information.
 
 ---
 
@@ -27,6 +29,7 @@ The project was developed for the **Web Technologies** coursework:
 - **Stores Map:** interactive map, store markers, popups, name search, and Refresh without a full page reload.
 - **API Caching:** 30-second in-memory Output Cache with invalidation after successful REST API modifications.
 - **Containerization:** Docker Compose configuration for ASP.NET Core and PostgreSQL, with persistent database storage.
+- **Product Landing Pages:** responsive Bootstrap product cards and detailed product presentation pages.
 - **Testing:** xUnit, Moq, HTTP integration tests, and an automated Postman collection.
 
 ---
@@ -60,10 +63,17 @@ CatalogManager/
 │   ├── Models/
 │   ├── DTOs/
 │   ├── Views/
-│   │   └── StoresMap/
+│   │   ├── Products/
+│   │   │   ├── Index.cshtml
+│   │   │   └── Details.cshtml
+│   │   ├── StoresMap/
+│   │   └── Shared/
 │   ├── wwwroot/
 │   │   ├── js/
+│   │   │   └── stores-map.js
 │   │   └── css/
+│   │       ├── stores-map.css
+│   │       └── product-landing.css
 │   └── Program.cs
 ├── Application/
 ├── Domain/
@@ -87,7 +97,7 @@ A local `.env` file is also used by Docker Compose. It contains environment-spec
 
 ## Architecture and Data Model
 
-CatalogManager follows a layered architecture:
+CatalogManager follows a layered architecture.
 
 **MVC requests:**
 
@@ -120,6 +130,8 @@ MVC controllers `CategoriesController`, `StoresController`, and `ProductsControl
 Input validation uses Data Annotations and application service business rules.
 
 Form POST actions use antiforgery validation.
+
+The MVC interface is also the foundation for the product landing pages introduced in C6.
 
 ---
 
@@ -664,9 +676,113 @@ The following operations were successfully completed on **29 October 2026**:
 
 ---
 
+## C6 — Bootstrap Product Landing Pages
+
+### Overview
+
+C6 introduces an improved, responsive user interface for presenting products.
+
+The existing MVC application previously displayed product information using conventional CRUD-oriented pages.
+
+The C6 implementation improves the presentation by introducing Bootstrap-based product cards and individual product landing pages.
+
+Each product has a dedicated Details page displaying its information in a more visually appealing format.
+
+The implementation reuses the existing Product entity, MVC controller, application services, and PostgreSQL database.
+
+No additional database entities, migrations, or REST API endpoints are required.
+
+### Product Catalog
+
+The product listing page is available at:
+
+`/Products`
+
+Products are displayed as responsive Bootstrap cards.
+
+Each card provides a compact overview of a product and navigation to its individual page.
+
+The catalog layout adapts to different screen sizes using Bootstrap's responsive grid system.
+
+### Individual Product Landing Page
+
+Each product has its own URL:
+
+`/Products/Details/{id}`
+
+For example:
+
+`/Products/Details/1`
+
+The landing page presents the selected product using a dedicated visual layout rather than only a standard CRUD details table.
+
+### Implemented Features
+
+- Responsive Bootstrap product cards.
+- Individual landing page for each product.
+- Product name and description.
+- Product price.
+- Product image using the optional `ImageUrl` property.
+- Category information.
+- Store information.
+- Navigation between the product catalog and individual product pages.
+- Custom CSS styling for improved visual presentation.
+- Layout adapted to desktop and smaller screens.
+- Reuse of existing MVC functionality and business logic.
+
+### Implementation Files
+
+| File | Responsibility |
+|---|---|
+| `Frontend/Views/Products/Index.cshtml` | Responsive product catalog |
+| `Frontend/Views/Products/Details.cshtml` | Individual product landing page |
+| `Frontend/wwwroot/css/product-landing.css` | Custom landing page and catalog styling |
+| `Frontend/Controllers/ProductsController.cs` | Existing MVC controller reused without requiring new actions |
+| `Domain/Entities/Product.cs` | Existing product data, including optional image URL |
+
+### Bootstrap Integration
+
+Bootstrap is used for responsive layout, spacing, typography, cards, and navigation.
+
+The custom `product-landing.css` file provides additional styling for the product presentation.
+
+The implementation separates visual presentation from business logic.
+
+Product information continues to be loaded through the existing MVC architecture:
+
+Browser → ProductsController → ProductService → ProductRepository → PostgreSQL
+
+### Image Handling
+
+The existing `ImageUrl` property is used to display product images.
+
+The images are referenced through URLs instead of storing binary image content in the database.
+
+The product landing page can present products without requiring any changes to the database schema.
+
+### Verification
+
+The C6 implementation was manually verified in the running application.
+
+Verification covered:
+
+- Product catalog rendering.
+- Navigation to individual product details.
+- Product images and text information.
+- Price presentation.
+- Category and store information.
+- Responsive Bootstrap layout.
+- Existing MVC functionality.
+
+The existing automated tests were also run successfully after implementing C6.
+
+No changes to API contracts, EF Core migrations, Docker configuration, or B9 caching policies were required.
+
+---
+
 ## Postman Collection — QA1 + B1 + B9
 
-The final collection is intended to be stored at:
+The combined collection is intended to be stored at:
 
 `Postman/CatalogManager_QA1_B1_B9.postman_collection.json`
 
@@ -777,6 +893,8 @@ Alternatively, open Visual Studio:
 
 Verified in Visual Studio on **29 October 2026**, after implementing B9.
 
+All existing automated tests were also reported as passing after the C6 changes; the latest exact test count has not been independently updated here.
+
 The Docker deployment itself was verified separately through container startup, EF Core migration execution, MVC operations, and REST API requests.
 
 ---
@@ -811,7 +929,7 @@ The previously reviewed pre-C5 coverage report showed:
 - Branch coverage: 77.7%.
 - Application layer line coverage: 100%.
 
-These historical figures are not claimed as current C4 coverage.
+These historical figures are not claimed as current C6 coverage.
 
 ---
 
@@ -843,17 +961,20 @@ These historical figures are not claimed as current C4 coverage.
 - **C8 — Interactive Stores Map:** implemented and verified.
 - **B9 — API Output Caching:** implemented; existing C# tests and 48/48 B9 Postman assertions passed.
 - **C4 — Docker Containerization:** successfully built and launched with PostgreSQL 17; migrations, MVC operations, REST API, and restart persistence verified.
+- **C6 — Bootstrap Landing Page:** implemented and verified; responsive product catalog and individual product presentation pages.
 
 ### Remaining Verification and Repository Tasks
 
 - B9: independently confirm actual Cache HIT using server-side diagnostics.
-- C4: finalize the Git commit and completion tag.
-- Confirm that `.env` is not tracked in Git.
+- Verify that local `.env` files are not tracked in Git.
 - Rotate any credentials previously exposed in screenshots or logs.
+- Finalize the C6 commit, README update, and completion tag.
 
 ### Planned Next Stages
 
-- **C3 — CI/CD:** configure automated build and deployment.
-- Prepare final video defenses for completed stages.
+- **C7 — SEO Optimization:** improve product landing page metadata and perform an SEO audit.
+- **F1 — Data Visualization:** add charts and statistical visualizations.
+- **QA2 — End-to-End Testing:** implement automated browser-based tests and evaluate coverage.
+- **C9 — Analytics Integration:** optional deferred stage.
 
 The project is developed incrementally, with separate commits and completion tags for coursework stages.
