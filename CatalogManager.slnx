@@ -1,4 +1,8 @@
 <Solution>
+  <Folder Name="/E2ETests/">
+    <File Path="CatalogManagerBrowserTests.cs" />
+    <Project Path="E2ETests/CatalogManager.E2ETests.csproj" />
+  </Folder>
   <Folder Name="/Solution Items/">
     <File Path="Frontend/.dockerignore" />
     <File Path="Frontend/.env.example" />
