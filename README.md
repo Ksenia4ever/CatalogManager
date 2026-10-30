@@ -31,7 +31,7 @@ The project was developed for the **Web Technologies** coursework.
 - **MVC interface:** Razor Views, Bootstrap, ViewModels, and antiforgery validation.
 - **REST API:** CRUD endpoints for categories, stores, and products.
 - **Pagination:** offset-based pagination for collection endpoints.
-- **Interactive map:** store markers, popups, search, and Refresh.
+- **Interactive map:** store markers, popups, search, and refresh.
 - **Output caching:** 30-second in-memory cache with tag-based invalidation.
 - **Docker:** ASP.NET Core and PostgreSQL with persistent database storage.
 - **Product landing pages:** responsive cards, images, descriptions, and prices.
@@ -461,7 +461,7 @@ Start existing containers:
 docker compose up -d
 ```
 
-View logs:
+View application logs:
 
 ```powershell
 docker compose logs web --tail=80
@@ -477,6 +477,7 @@ Do not use `docker compose down -v` unless the database volume should intentiona
 - MVC and REST API requests worked.
 - Data remained stored after restarting containers.
 - The Docker environment was reused successfully during QA2.
+- All seven Playwright E2E tests passed against the Docker application.
 
 ### Limitations
 
@@ -728,7 +729,42 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\E2ETests\bin\Debug\ne
 
 This installs the browser components required for Playwright testing.
 
+### Run QA2 with Visual Studio and IIS Express (Without Docker)
+
+1. Configure the local PostgreSQL database and application connection string.
+2. Open `CatalogManager.slnx` in Visual Studio.
+3. Select the IIS Express launch profile.
+4. Start the application using **Ctrl + F5** (Start Without Debugging).
+5. Verify the following page opens:
+
+`https://localhost:44361/Products/Create`
+
+6. Open **Developer PowerShell** in the solution root.
+7. Set the application URL:
+
+```powershell
+$env:CATALOGMANAGER_E2E_BASE_URL = "https://localhost:44361"
+```
+
+8. Run the E2E tests:
+
+```powershell
+dotnet test E2ETests/CatalogManager.E2ETests.csproj
+```
+
+Expected result:
+
+```text
+Test summary: total: 7; failed: 0; succeeded: 7; skipped: 0
+```
+
+Keep IIS Express running throughout the test execution.
+
+The test project uses the existing ASP.NET Core application and does not require Docker when IIS Express is available.
+
 ### Run QA2 Tests Against Docker
+
+Docker provides an alternative test environment.
 
 Start the Docker environment:
 
@@ -736,7 +772,7 @@ Start the Docker environment:
 docker compose up --build -d
 ```
 
-Verify the application:
+Verify that the application is accessible at:
 
 `http://localhost:8085`
 
@@ -754,17 +790,18 @@ dotnet test E2ETests/CatalogManager.E2ETests.csproj
 
 ### Verified QA2 Results
 
-| Metric | Result |
-|---|---:|
-| Total E2E Tests | **7** |
-| Passed | **7** |
-| Failed | **0** |
-| Skipped | **0** |
-| Duration | **9.2 seconds** |
+The Playwright E2E test suite was successfully executed against both IIS Express and Docker.
 
-Verified on **30 October 2026**.
+| Environment | Total | Passed | Failed | Skipped | Duration |
+|---|---:|---:|---:|---:|---|
+| Visual Studio + IIS Express | 7 | 7 | 0 | 0 | 9.7 seconds |
+| Docker + PostgreSQL | 7 | 7 | 0 | 0 | 9.2 seconds |
 
-All seven tests passed against the application running in Docker.
+**Verification date:** 30 October 2026.
+
+**Result: All seven E2E tests passed in both environments.**
+
+These results demonstrate that QA2 does not depend specifically on Docker and can be executed against an independently running ASP.NET Core application.
 
 ### E2E Scenario Coverage Assessment
 
@@ -783,9 +820,9 @@ QA2 verifies seven selected end-user scenarios across the main application inter
 | Products CRUD | Full Create, Edit, Delete flow | Not covered by QA2 |
 | REST API Negative Scenarios | HTTP validation and conflict responses | Covered separately by QA1 |
 
-**Coverage interpretation:**
+### Coverage Interpretation
 
-The E2E suite covers the selected core user journeys but does not represent complete coverage of all application features.
+The E2E suite covers selected core user journeys but does not represent complete coverage of all application features.
 
 The main full CRUD browser scenario covers Categories.
 
@@ -797,23 +834,29 @@ This assessment represents functional scenario coverage, not source-code line co
 
 The Category CRUD E2E scenario creates a uniquely named test category.
 
-After the test, it deletes the test record.
+After successful execution, it deletes the test record.
 
 This supports repeatable execution and reduces interference with existing catalog records.
 
 The test suite runs against a live development environment and should not be executed against production data.
 
-### Docker Integration
+### Docker and IIS Express Compatibility
 
-During QA2 implementation, the application was executed in Docker because Windows Application Control blocked the local IIS Express process from loading `CatalogManager.Domain.dll`.
+During the initial QA2 implementation, Windows Application Control temporarily prevented IIS Express from loading `CatalogManager.Domain.dll`.
 
-The Docker environment provided a working alternative runtime.
+Docker provided a working alternative environment for testing.
 
-After rebuilding the Docker image with the latest source code, previously unavailable Statistics and robots.txt endpoints became accessible.
+After rebuilding the Docker image, all seven E2E tests passed against:
 
-All seven Playwright tests then passed.
+`http://localhost:8085`
 
-This confirms that the E2E test suite can execute against the containerized application without changing existing application business logic.
+The local IIS Express issue was subsequently resolved.
+
+The same seven tests then passed against:
+
+`https://localhost:44361`
+
+No changes to the E2E test source code were required to switch between environments.
 
 ### QA2 Limitations
 
@@ -824,6 +867,7 @@ This confirms that the E2E test suite can execute against the containerized appl
 - Full browser CRUD testing for all three entities is not included.
 - Running browser tests against production data is not recommended.
 - E2E tests do not replace unit or HTTP integration tests.
+- A clean development database and valid application configuration are required.
 
 ### QA2 Conclusion
 
@@ -835,7 +879,7 @@ The project now supports three complementary testing levels:
 2. HTTP integration tests for application endpoints.
 3. Browser-based E2E tests for user workflows.
 
-**QA2 result: 7 passed, 0 failed, 0 skipped.**
+**QA2 result: 7 passed, 0 failed, 0 skipped in both verified environments.**
 
 ---
 
@@ -856,7 +900,7 @@ It contains scenarios for:
 1. Start CatalogManager.
 2. Import the collection into Postman.
 3. Set the `baseUrl` collection variable.
-4. Select a folder.
+4. Select the relevant folder.
 5. Run the folder using Collection Runner.
 6. Review Passed, Failed, and Errors.
 
@@ -892,6 +936,8 @@ Configure the connection using User Secrets:
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=CatalogManagerDb;Username=postgres;Password=YOUR_PASSWORD" --project Frontend
 ```
 
+Replace `YOUR_PASSWORD` with the local PostgreSQL password.
+
 ### Apply Migrations
 
 ```powershell
@@ -905,6 +951,8 @@ dotnet run --project Frontend
 ```
 
 The development URL depends on the selected launch profile.
+
+Alternatively, open the solution in Visual Studio and run CatalogManager using IIS Express.
 
 ---
 
@@ -937,14 +985,33 @@ dotnet test UnitTests
 dotnet test IntegrationTests
 ```
 
-### Run E2E Tests
+### Run E2E Tests with IIS Express
 
-Ensure that the application is running, then execute:
+Make sure CatalogManager is running at:
+
+`https://localhost:44361`
+
+In Developer PowerShell:
+
+```powershell
+$env:CATALOGMANAGER_E2E_BASE_URL = "https://localhost:44361"
+dotnet test E2ETests/CatalogManager.E2ETests.csproj
+```
+
+### Run E2E Tests with Docker
+
+Make sure CatalogManager is running at:
+
+`http://localhost:8085`
+
+In Windows PowerShell:
 
 ```powershell
 $env:CATALOGMANAGER_E2E_BASE_URL = "http://localhost:8085"
 dotnet test E2ETests/CatalogManager.E2ETests.csproj
 ```
+
+Both environments were verified successfully.
 
 ### Last Confirmed Test Results
 
@@ -957,9 +1024,9 @@ dotnet test E2ETests/CatalogManager.E2ETests.csproj
 
 **274 tests passed across the three test suites, with 0 failed and 0 skipped in their confirmed runs.**
 
-The 267 unit/integration tests and seven Playwright tests were verified separately.
+The 267 unit/integration tests and seven Playwright E2E tests were verified separately.
 
-The E2E tests passed against Docker on 30 October 2026.
+The E2E tests passed against both IIS Express and Docker on 30 October 2026.
 
 ---
 
@@ -1029,8 +1096,8 @@ The QA2 scenario assessment is separate from code coverage.
 - **C4 — Docker Containerization:** built and verified with PostgreSQL 17 and persistent storage.
 - **C6 — Bootstrap Landing Page:** implemented and verified.
 - **C7 — SEO Optimization:** Lighthouse SEO 100/100.
-- **F1 — Data Visualization:** three charts and statistics dashboard implemented.
-- **QA2 — End-to-End Testing:** seven Playwright browser tests passed against Docker.
+- **F1 — Data Visualization:** three charts and statistics dashboard implemented; 267 C# tests passed.
+- **QA2 — End-to-End Testing:** seven Playwright browser tests passed against both IIS Express and Docker.
 
 ### Latest Testing Summary
 
@@ -1041,15 +1108,15 @@ The QA2 scenario assessment is separate from code coverage.
 
 ### Remaining Tasks
 
-- Verify no local `.env` files are tracked by Git.
-- Resolve the Windows Application Control issue affecting IIS Express.
+- Verify that local `.env` files are not tracked by Git.
 - Independently confirm actual B9 Cache HIT using diagnostics.
-- Finalize the QA2 commit and completion tag.
-- Prepare a combined QA2/F1 video defense later.
+- Implement and verify F2 and B2.
+- Prepare a combined F1, QA2, F2, and B2 video defense after completing the next two stages.
 
 ### Planned Next Stages
 
-- **C9 — Analytics Integration:** deferred optional stage.
-- Additional coursework stages may be selected as needed.
+- **F2 — AJAX Autocomplete (4 points):** replace Category and Store dropdowns in Product forms with server-side autocomplete.
+- **B2 — External API Integration (2 points):** add integration with another external API for currency information.
+- **C9 — Analytics Integration (1 point):** deferred optional stage.
 
 The project is developed incrementally, using separate Git commits and completion tags for each coursework stage.
