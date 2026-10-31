@@ -1,10 +1,8 @@
-﻿
-(() => {
+﻿(() => {
     'use strict';
 
     const LOCAL_KEY = 'catalogmanager.c12.notes.v1';
     const TYPES = new Set(['paragraph', 'heading1', 'heading2', 'bullets', 'numbers']);
-
     const container = document.getElementById('notesBlocks');
     if (!container) return;
 
@@ -21,8 +19,6 @@
     const addButton = document.getElementById('notesAdd');
     const clearButton = document.getElementById('notesClear');
 
-    const activity = document.getElementById('notesRemoteActivity');
-
     let blocks = [];
     let documentId = 'shared';
     let version = 0;
@@ -34,331 +30,181 @@
     let generation = 0;
     let connection;
 
+    // C14: Notifications only for changes received from a different client.
+    const activity = document.getElementById('notesRemoteActivity');
+    let activityTimer = null;
     const remoteEvents = [];
     const MAX_EVENTS = 8;
 
-    // C13/C14: validate document identifiers before using SignalR.
-    function validId(value) {
-        return typeof value === 'string' &&
-            /^[A-Za-z0-9_-]{1,64}$/.test(value) &&
-            value.toLowerCase() !== 'null' &&
-            value.toLowerCase() !== 'undefined';
-    }
-
-    function safeDocumentId(value) {
-        return validId(value) ? value : 'shared';
-    }
-
     function announceRemote(messages) {
         if (!activity || !messages.length) return;
-
         messages.forEach(message => remoteEvents.unshift(message));
-
         remoteEvents.length = Math.min(remoteEvents.length, MAX_EVENTS);
-
         activity.replaceChildren();
-
         const heading = document.createElement('strong');
-        heading.textContent =
-            `Recent remote changes (last ${remoteEvents.length})`;
-
+        heading.textContent = `Recent remote changes (last ${remoteEvents.length})`;
         activity.appendChild(heading);
-
         const list = document.createElement('ul');
         list.className = 'mb-0 mt-1';
-
         for (const message of remoteEvents) {
             const li = document.createElement('li');
             li.textContent = message;
             list.appendChild(li);
         }
-
         activity.appendChild(list);
         activity.hidden = false;
     }
 
     function visualizeRemote(previous, next) {
-        const before = new Map(
-            previous.map((block, index) => [
-                block.id,
-                { block, index }
-            ])
-        );
-
-        const after = new Map(
-            next.map((block, index) => [
-                block.id,
-                { block, index }
-            ])
-        );
-
+        const before = new Map(previous.map((block, index) => [block.id, { block, index }]));
+        const after = new Map(next.map((block, index) => [block.id, { block, index }]));
         const messages = [];
         const effects = new Map();
         let removed = 0;
 
         for (const [id, entry] of after) {
             const old = before.get(id);
-
             if (!old) {
                 effects.set(id, 'notes-remote-added');
-                messages.push(
-                    `Added: ${entry.block.type} (position ${entry.index + 1})`
-                );
-            } else if (
-                old.block.text !== entry.block.text ||
-                old.block.type !== entry.block.type
-            ) {
+                messages.push(`Added: ${entry.block.type} (position ${entry.index + 1})`);
+            } else if (old.block.text !== entry.block.text || old.block.type !== entry.block.type) {
                 effects.set(id, 'notes-remote-updated');
-                messages.push(
-                    `Edited: ${entry.block.type} (position ${entry.index + 1})`
-                );
+                messages.push(`Edited: ${entry.block.type} (position ${entry.index + 1})`);
             } else if (old.index !== entry.index) {
                 effects.set(id, 'notes-remote-moved');
-                messages.push(
-                    `Moved: ${entry.block.type} to position ${entry.index + 1}`
-                );
+                messages.push(`Moved: ${entry.block.type} to position ${entry.index + 1}`);
             }
         }
-
         for (const [id, old] of before) {
             if (!after.has(id)) {
                 removed++;
-
-                messages.push(
-                    `Deleted: ${old.block.type} (previous position ${old.index + 1})`
-                );
+                messages.push(`Deleted: ${old.block.type} (previous position ${old.index + 1})`);
             }
         }
 
         for (const [id, className] of effects) {
-            const node = Array.from(container.children)
-                .find(element => element.dataset.blockId === id);
-
+            const node = Array.from(container.children).find(el => el.dataset.blockId === id);
             if (!node) continue;
-
             node.classList.add(className);
-
             const marker = document.createElement('span');
             marker.className = 'notes-remote-label badge rounded-pill';
-
-            marker.textContent =
-                className === 'notes-remote-added'
-                    ? 'Added remotely'
-                    : className === 'notes-remote-updated'
-                        ? 'Edited remotely'
-                        : 'Moved remotely';
-
+            marker.textContent = className === 'notes-remote-added' ? 'Added remotely'
+                : className === 'notes-remote-updated' ? 'Edited remotely' : 'Moved remotely';
             node.querySelector('.card-body')?.prepend(marker);
-
             window.setTimeout(() => {
                 node.classList.remove(className);
                 marker.remove();
             }, 3500);
         }
-
         if (removed) {
+            // Deleted blocks no longer exist in the new snapshot; a notice is displayed instead.
             const notice = document.createElement('p');
-
-            notice.className =
-                'notes-remote-deleted alert alert-warning py-2';
-
-            notice.textContent =
-                `${removed} block(s) deleted in another browser.`;
-
+            notice.className = 'notes-remote-deleted alert alert-warning py-2';
+            notice.textContent = `${removed} block(s) deleted in another browser.`;
             container.prepend(notice);
-
             window.setTimeout(() => notice.remove(), 3500);
         }
-
         announceRemote(messages);
     }
 
-    function setStatus(text) {
-        if (saveStatus) {
-            saveStatus.textContent = text;
-        }
-    }
-
+    function setStatus(text) { saveStatus.textContent = text; }
     function newId() {
-        return crypto.randomUUID?.() ||
-            `b-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        return crypto.randomUUID?.() || `b-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     }
-
     function normalize(input) {
         return {
-            id: typeof input?.id === 'string' && input.id
-                ? input.id
-                : newId(),
-
-            type: TYPES.has(input?.type)
-                ? input.type
-                : 'paragraph',
-
-            text: typeof input?.text === 'string'
-                ? input.text
-                : ''
+            id: typeof input?.id === 'string' && input.id ? input.id : newId(),
+            type: TYPES.has(input?.type) ? input.type : 'paragraph',
+            text: typeof input?.text === 'string' ? input.text : ''
         };
     }
-
-    function esc(value) {
-        return value
-            .replaceAll('&', '&amp;')
-            .replaceAll('<', '&lt;')
-            .replaceAll('>', '&gt;')
-            .replaceAll('"', '&quot;')
-            .replaceAll("'", '&#39;');
+    // Treat URL placeholders as missing IDs, not as real document names.
+    // The regular expression alone would accept the literal strings "null" and "undefined".
+    function validId(value) {
+        return typeof value === 'string'
+            && value.toLowerCase() !== 'null'
+            && value.toLowerCase() !== 'undefined'
+            && /^[A-Za-z0-9_-]{1,64}$/.test(value);
     }
 
+    function documentIdFromUrl() {
+        const value = new URLSearchParams(window.location.search).get('doc');
+        return validId(value) ? value : 'shared';
+    }
+    function esc(value) {
+        return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+    }
     function inline(raw) {
-        return esc(raw)
-            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        return esc(raw).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
             .replace(/\*(.+?)\*/g, '<em>$1</em>')
             .replace(/`([^`]+)`/g, '<code>$1</code>');
     }
-
     function showPreview() {
         if (!previewVisible) return;
-
-        preview.innerHTML = blocks.map(block => {
-            const lines = block.text.split(/\r?\n/);
-
-            if (block.type === 'heading1') {
-                return `<h1>${inline(block.text)}</h1>`;
-            }
-
-            if (block.type === 'heading2') {
-                return `<h2>${inline(block.text)}</h2>`;
-            }
-
-            if (
-                block.type === 'bullets' ||
-                block.type === 'numbers'
-            ) {
-                const tag = block.type === 'bullets'
-                    ? 'ul'
-                    : 'ol';
-
-                const items = lines
-                    .filter(line => line.trim())
-                    .map(line => {
-                        const content = line.replace(
-                            /^\s*(?:[-*]|\d+\.)\s+/,
-                            ''
-                        );
-
-                        return `<li>${inline(content)}</li>`;
-                    })
-                    .join('');
-
+        preview.innerHTML = blocks.map(b => {
+            const lines = b.text.split(/\r?\n/);
+            if (b.type === 'heading1') return `<h1>${inline(b.text)}</h1>`;
+            if (b.type === 'heading2') return `<h2>${inline(b.text)}</h2>`;
+            if (b.type === 'bullets' || b.type === 'numbers') {
+                const tag = b.type === 'bullets' ? 'ul' : 'ol';
+                const items = lines.filter(l => l.trim()).map(l =>
+                    `<li>${inline(l.replace(/^\s*(?:[-*]|\d+\.)\s+/, ''))}</li>`).join('');
                 return `<${tag}>${items}</${tag}>`;
             }
-
             return `<p>${lines.map(inline).join('<br>')}</p>`;
-        }).join('') ||
-            '<p class="text-muted">No content to preview.</p>';
+        }).join('') || '<p class="text-muted">No content to preview.</p>';
     }
-
     function render() {
         container.replaceChildren();
-
-        blocks.forEach((block, index) => {
-            const node =
-                template.content.firstElementChild.cloneNode(true);
-
-            node.dataset.blockId = block.id;
-
-            node.querySelector('.notes-block-type').value =
-                block.type;
-
-            node.querySelector('.notes-block-text').value =
-                block.text;
-
-            node.querySelector('.notes-move-up').disabled =
-                index === 0;
-
-            node.querySelector('.notes-move-down').disabled =
-                index === blocks.length - 1;
-
+        blocks.forEach((b, index) => {
+            const node = template.content.firstElementChild.cloneNode(true);
+            node.dataset.blockId = b.id;
+            node.querySelector('.notes-block-type').value = b.type;
+            node.querySelector('.notes-block-text').value = b.text;
+            node.querySelector('.notes-move-up').disabled = index === 0;
+            node.querySelector('.notes-move-down').disabled = index === blocks.length - 1;
             container.appendChild(node);
         });
-
         empty.hidden = blocks.length > 0;
-
         showPreview();
     }
-
     function blockIndex(element) {
-        const id = element
-            .closest('.notes-block')
-            ?.dataset.blockId;
-
-        return blocks.findIndex(block => block.id === id);
+        const id = element.closest('.notes-block')?.dataset.blockId;
+        return blocks.findIndex(b => b.id === id);
     }
-
     function applySnapshot(snapshot, remote = false) {
-        const previous = remote
-            ? blocks.map(block => ({ ...block }))
-            : [];
-
+        const previous = remote ? blocks.map(b => ({ ...b })) : [];
         version = snapshot.version;
-
         blocks = (snapshot.blocks || []).map(normalize);
-
         dirty = false;
-
         render();
-
-        if (remote) {
-            visualizeRemote(previous, blocks);
-        }
-
+        if (remote) visualizeRemote(previous, blocks);
         setStatus(`Server version ${version} loaded.`);
     }
 
     async function save() {
         clearTimeout(timer);
         timer = null;
-
         if (!dirty || !connected || saving) return;
-
         saving = true;
-
         const currentGeneration = generation;
         const sent = JSON.stringify(blocks);
         const sentVersion = version;
-
         try {
-            const saved = await connection.invoke(
-                'SaveDocument',
-                documentId,
-                sentVersion,
-                JSON.parse(sent)
-            );
-
+            const saved = await connection.invoke('SaveDocument', documentId,
+                sentVersion, JSON.parse(sent));
             if (currentGeneration !== generation) return;
-
             version = saved.version;
-
+            // Preserve edits typed while the request was in flight.
             dirty = JSON.stringify(blocks) !== sent;
-
             setStatus(`Saved on server · version ${version}`);
-
-            if (dirty) {
-                queueSave();
-            }
+            if (dirty) queueSave();
         } catch (error) {
             console.warn('Notes save failed:', error);
-
             if (currentGeneration !== generation) return;
-
             dirty = true;
-
-            setStatus(
-                'Save failed or document changed elsewhere. ' +
-                'Your unsaved text is kept here. ' +
-                'Reload server version to resolve ' +
-                '(this discards local edits).'
-            );
+            setStatus('Save failed or document changed elsewhere. Your unsaved text is kept here. Reload server version to resolve (this discards local edits).');
         } finally {
             saving = false;
         }
@@ -366,318 +212,314 @@
 
     function queueSave() {
         dirty = true;
-
         setStatus('Unsaved changes…');
-
         clearTimeout(timer);
-
         timer = setTimeout(save, 650);
-
         showPreview();
     }
 
     async function join(id) {
-        const normalizedId = safeDocumentId(id);
-
-        if (
-            dirty &&
-            !window.confirm(
-                'Discard unsaved changes and open another document?'
-            )
-        ) {
+        if (!validId(id)) {
+            setStatus('Document ID: use 1–64 letters, digits, - or _.');
             return;
         }
-
+        if (dirty && !window.confirm('Discard unsaved changes and open another document?')) return;
         clearTimeout(timer);
         timer = null;
-
         generation++;
         dirty = false;
-
-        documentId = normalizedId;
-        documentInput.value = normalizedId;
-
-        history.replaceState(
-            null,
-            '',
-            `${location.pathname}?doc=${encodeURIComponent(normalizedId)}`
-        );
-
+        documentId = id;
+        documentInput.value = id;
+        history.replaceState(null, '', `${location.pathname}?doc=${encodeURIComponent(id)}`);
         try {
-            if (!connected) {
-                throw new Error('Not connected');
-            }
-
-            const snapshot = await connection.invoke(
-                'JoinDocument',
-                normalizedId
-            );
-
+            if (!connected) throw new Error('Not connected');
+            const snapshot = await connection.invoke('JoinDocument', id);
             applySnapshot(snapshot);
         } catch (error) {
-            setStatus(
-                `Could not open document: ${error.message}`
-            );
+            setStatus(`Could not open document: ${error.message}`);
         }
     }
 
     async function initialize() {
         if (typeof signalR === 'undefined') {
-            connectionStatus.textContent =
-                'SignalR JavaScript library not loaded. Check internet/CDN.';
-
+            connectionStatus.textContent = 'SignalR JavaScript library not loaded. Check internet/CDN.';
             return;
         }
-
         connection = new signalR.HubConnectionBuilder()
             .withUrl('/notesHub')
             .withAutomaticReconnect()
             .build();
 
         connection.on('DocumentChanged', snapshot => {
-            if (
-                snapshot.documentId !== documentId ||
-                snapshot.version <= version
-            ) {
-                return;
-            }
-
+            if (snapshot.documentId !== documentId || snapshot.version <= version) return;
             if (dirty || saving) {
-                setStatus(
-                    'Another browser changed this document. ' +
-                    'Your unsaved edits remain here. ' +
-                    'Use Reload server version to accept their changes.'
-                );
-
+                setStatus('Another browser changed this document. Your unsaved edits remain here. Use Reload server version to accept their changes.');
                 return;
             }
-
             applySnapshot(snapshot, true);
-
-            setStatus(
-                `Updated from another browser · version ${version}`
-            );
+            setStatus(`Updated from another browser · version ${version}`);
         });
-
         connection.onreconnecting(() => {
             connected = false;
-
             connectionStatus.textContent = 'Reconnecting…';
         });
-
         connection.onreconnected(async () => {
             connected = true;
-
-            connectionStatus.textContent =
-                'Connected · live synchronization';
-
-            if (!dirty) {
-                await join(documentId);
-            } else {
-                setStatus(
-                    'Reconnected. Local unsaved changes preserved; ' +
-                    'reload server version if needed.'
-                );
-            }
+            connectionStatus.textContent = 'Connected · live synchronization';
+            if (!dirty) await join(documentId);
+            else setStatus('Reconnected. Local unsaved changes preserved; reload server version if needed.');
         });
-
         connection.onclose(() => {
             connected = false;
-
-            connectionStatus.textContent =
-                'Disconnected. Reload page to connect again.';
+            connectionStatus.textContent = 'Disconnected. Reload page to connect again.';
         });
 
         try {
             await connection.start();
-
             connected = true;
-
-            connectionStatus.textContent =
-                'Connected · live synchronization';
-
-            const fromUrl = new URLSearchParams(
-                window.location.search
-            ).get('doc');
-
-            const initialDocumentId = safeDocumentId(fromUrl);
-
-            await join(initialDocumentId);
+            connectionStatus.textContent = 'Connected · live synchronization';
+            await join(documentIdFromUrl());
         } catch (error) {
-            connectionStatus.textContent =
-                `Connection failed: ${error.message}`;
+            connectionStatus.textContent = `Connection failed: ${error.message}`;
         }
     }
 
     container.addEventListener('input', event => {
         if (!event.target.matches('.notes-block-text')) return;
-
         const index = blockIndex(event.target);
-
         if (index < 0) return;
-
         blocks[index].text = event.target.value;
-
         queueSave();
     });
-
     container.addEventListener('change', event => {
         if (!event.target.matches('.notes-block-type')) return;
-
         const index = blockIndex(event.target);
-
         if (index < 0) return;
-
-        blocks[index].type = TYPES.has(event.target.value)
-            ? event.target.value
-            : 'paragraph';
-
+        blocks[index].type = TYPES.has(event.target.value) ? event.target.value : 'paragraph';
         queueSave();
     });
-
     container.addEventListener('click', event => {
         const button = event.target.closest('button');
-
         if (!button) return;
-
         const index = blockIndex(button);
-
         if (index < 0) return;
-
-        if (button.classList.contains('notes-delete')) {
-            blocks.splice(index, 1);
-        } else if (
-            button.classList.contains('notes-move-up') &&
-            index > 0
-        ) {
-            [blocks[index - 1], blocks[index]] =
-                [blocks[index], blocks[index - 1]];
-        } else if (
-            button.classList.contains('notes-move-down') &&
-            index < blocks.length - 1
-        ) {
-            [blocks[index + 1], blocks[index]] =
-                [blocks[index], blocks[index + 1]];
-        } else {
-            return;
-        }
-
+        if (button.classList.contains('notes-delete')) blocks.splice(index, 1);
+        else if (button.classList.contains('notes-move-up') && index > 0)
+            [blocks[index - 1], blocks[index]] = [blocks[index], blocks[index - 1]];
+        else if (button.classList.contains('notes-move-down') && index < blocks.length - 1)
+            [blocks[index + 1], blocks[index]] = [blocks[index], blocks[index + 1]];
+        else return;
         render();
         queueSave();
     });
 
     addButton.addEventListener('click', () => {
-        blocks.push(
-            normalize({
-                type: 'paragraph',
-                text: ''
-            })
-        );
-
+        blocks.push(normalize({ type: 'paragraph', text: '' }));
         render();
         queueSave();
-
-        container.lastElementChild
-            ?.querySelector('textarea')
-            ?.focus();
+        container.lastElementChild?.querySelector('textarea')?.focus();
     });
-
     clearButton.addEventListener('click', () => {
-        if (!confirm(
-            'Clear the SHARED document for every browser?'
-        )) {
-            return;
-        }
-
+        if (!confirm('Clear the SHARED document for every browser?')) return;
         blocks = [];
-
         render();
         queueSave();
     });
-
     previewButton.addEventListener('click', () => {
         previewVisible = !previewVisible;
-
         preview.hidden = !previewVisible;
-
-        previewButton.textContent =
-            previewVisible ? 'Hide preview' : 'Preview';
-
-        previewButton.setAttribute(
-            'aria-pressed',
-            String(previewVisible)
-        );
-
+        previewButton.textContent = previewVisible ? 'Hide preview' : 'Preview';
+        previewButton.setAttribute('aria-pressed', String(previewVisible));
         showPreview();
     });
-
-    openButton.addEventListener('click', () => {
-        const requestedId = documentInput.value.trim();
-
-        if (!validId(requestedId)) {
-            setStatus(
-                'Invalid document ID. Use 1–64 letters, ' +
-                'numbers, - or _. The values null and ' +
-                'undefined are not allowed.'
-            );
-
-            documentInput.value = documentId;
-
-            return;
-        }
-
-        join(requestedId);
-    });
-
+    openButton.addEventListener('click', () => join(documentInput.value.trim()));
     reloadButton.addEventListener('click', async () => {
-        if (
-            dirty &&
-            !confirm(
-                'Discard unsaved local changes and load ' +
-                'the server document?'
-            )
-        ) {
-            return;
-        }
-
+        if (dirty && !confirm('Discard unsaved local changes and load the server document?')) return;
         await join(documentId);
     });
-
     importButton.addEventListener('click', () => {
         let local;
-
         try {
-            local = JSON.parse(
-                localStorage.getItem(LOCAL_KEY) || 'null'
-            );
-        } catch {
-            local = null;
-        }
-
+            local = JSON.parse(localStorage.getItem(LOCAL_KEY) || 'null');
+        } catch { local = null; }
         if (!Array.isArray(local)) {
-            setStatus(
-                'No C12 local document found in this browser.'
-            );
-
+            setStatus('No C12 local document found in this browser.');
             return;
         }
-
-        if (!confirm(
-            'Replace the current shared document ' +
-            'with your C12 notes?'
-        )) {
-            return;
-        }
-
+        if (!confirm('Replace the current shared document with your C12 notes?')) return;
         blocks = local.slice(0, 500).map(normalize);
-
         render();
         queueSave();
+    });
+
+    // C15: Browser File API — import JSON and export JSON/Markdown.
+    // Controls are created dynamically to avoid changing the C12-C14 Razor View.
+    const fileTools = document.createElement('div');
+    fileTools.className = 'd-flex flex-wrap gap-2 mt-2 mb-3 align-items-center';
+    fileTools.setAttribute('aria-label', 'C15 document file tools');
+
+    const importFileButton = document.createElement('button');
+    importFileButton.type = 'button';
+    importFileButton.className = 'btn btn-outline-primary';
+    importFileButton.textContent = 'Import JSON file';
+
+    const exportJsonButton = document.createElement('button');
+    exportJsonButton.type = 'button';
+    exportJsonButton.className = 'btn btn-outline-success';
+    exportJsonButton.textContent = 'Export JSON';
+
+    const exportMarkdownButton = document.createElement('button');
+    exportMarkdownButton.type = 'button';
+    exportMarkdownButton.className = 'btn btn-outline-secondary';
+    exportMarkdownButton.textContent = 'Export Markdown';
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.json,application/json';
+    fileInput.hidden = true;
+    fileInput.setAttribute('aria-label', 'Select a notes JSON file');
+
+    const fileDescription = document.createElement('span');
+    fileDescription.className = 'text-muted small';
+    fileDescription.textContent = 'C15 · FileReader, Blob and object URLs';
+
+    fileTools.append(importFileButton, exportJsonButton,
+        exportMarkdownButton, fileInput, fileDescription);
+    // Existing Import C12 button remains unchanged.
+    importButton.insertAdjacentElement('afterend', fileTools);
+
+    const MAX_FILE_BYTES = 1024 * 1024;
+    const MAX_IMPORT_BLOCKS = 500;
+    const MAX_TEXT_LENGTH = 10000;
+
+    function validateImportedDocument(payload) {
+        // Accept exports from this version and a plain array of blocks.
+        const importedBlocks = Array.isArray(payload) ? payload : payload?.blocks;
+        if (!Array.isArray(importedBlocks)) {
+            throw new Error('JSON must contain a blocks array.');
+        }
+        if (importedBlocks.length > MAX_IMPORT_BLOCKS) {
+            throw new Error(`Maximum ${MAX_IMPORT_BLOCKS} blocks per file.`);
+        }
+        const ids = new Set();
+        return importedBlocks.map((item, index) => {
+            if (!item || typeof item !== 'object' || Array.isArray(item)) {
+                throw new Error(`Block ${index + 1} must be an object.`);
+            }
+            if (!TYPES.has(item.type) || typeof item.text !== 'string') {
+                throw new Error(`Block ${index + 1} has an invalid type or text.`);
+            }
+            if (item.text.length > MAX_TEXT_LENGTH) {
+                throw new Error(`Text in block ${index + 1} is too long.`);
+            }
+            // Do not trust IDs from files; assign fresh IDs for the target document.
+            const result = { id: newId(), type: item.type, text: item.text };
+            if (ids.has(result.id)) throw new Error('Duplicate block ID generated.');
+            ids.add(result.id);
+            return result;
+        });
+    }
+
+    function downloadText(filename, contents, mimeType) {
+        const blob = new Blob([contents], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = filename;
+        document.body.append(anchor);
+        anchor.click();
+        anchor.remove();
+        // Release the temporary browser object URL after the click has started.
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function markdownFromBlocks(items) {
+        return items.map(block => {
+            const text = block.text.replace(/\r\n/g, '\n');
+            if (block.type === 'heading1') return `# ${text}`;
+            if (block.type === 'heading2') return `## ${text}`;
+            if (block.type === 'bullets') {
+                return text.split('\n').filter(line => line.trim())
+                    .map(line => `- ${line.replace(/^\s*[-*]\s+/, '')}`).join('\n');
+            }
+            if (block.type === 'numbers') {
+                return text.split('\n').filter(line => line.trim())
+                    .map((line, index) => `${index + 1}. ${line.replace(/^\s*\d+\.\s+/, '')}`)
+                    .join('\n');
+            }
+            return text;
+        }).join('\n\n') + '\n';
+    }
+
+    exportJsonButton.addEventListener('click', () => {
+        const payload = {
+            format: 'CatalogManagerNotes',
+            formatVersion: 1,
+            exportedAt: new Date().toISOString(),
+            documentId,
+            blocks: blocks.map(({ id, type, text }) => ({ id, type, text }))
+        };
+        downloadText(`${documentId}.json`, JSON.stringify(payload, null, 2),
+            'application/json;charset=utf-8');
+        setStatus('JSON document exported from browser.');
+    });
+
+    exportMarkdownButton.addEventListener('click', () => {
+        downloadText(`${documentId}.md`, markdownFromBlocks(blocks),
+            'text/markdown;charset=utf-8');
+        setStatus('Markdown file exported from browser.');
+    });
+
+    importFileButton.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', () => {
+        const file = fileInput.files?.[0];
+        fileInput.value = '';
+        if (!file) return;
+        if (file.size > MAX_FILE_BYTES) {
+            setStatus('File is too large (maximum 1 MB).');
+            return;
+        }
+        if (!file.name.toLowerCase().endsWith('.json')) {
+            setStatus('Please select a .json file.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onerror = () => setStatus('The browser could not read the selected file.');
+        reader.onload = () => {
+            let imported;
+            try {
+                imported = validateImportedDocument(JSON.parse(String(reader.result)));
+            } catch (error) {
+                setStatus(`Import rejected: ${error.message}`);
+                return;
+            }
+            if (!connected) {
+                setStatus('Connect to the server before importing.');
+                return;
+            }
+            if (saving) {
+                setStatus('A save is still running. Import again after it completes.');
+                return;
+            }
+            if (!window.confirm(
+                `Replace all blocks in shared document "${documentId}" with ${imported.length} block(s)? ` +
+                'The change will be synchronized to other browsers.')) return;
+
+            clearTimeout(timer);
+            blocks = imported;
+            render();
+            queueSave();
+            setStatus('JSON imported; saving to server…');
+        };
+        reader.readAsText(file, 'UTF-8');
     });
 
     window.addEventListener('pagehide', () => {
+        // Unlike C12 localStorage, network operations are not guaranteed during unload.
+        // Leave the page only after “Saved on server” is displayed.
         clearTimeout(timer);
     });
-
     initialize();
 })();
