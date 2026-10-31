@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.OutputCaching;
 using CatalogManager.Services;
+using CatalogManager.Hubs;
 using CatalogManager.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using CatalogManager.Application.Interfaces;
@@ -52,6 +53,9 @@ builder.Services.AddHttpClient<
         client.Timeout = TimeSpan.FromSeconds(10);
     });
 
+builder.Services.AddSingleton<SharedNotesStore>();
+builder.Services.AddSignalR();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -74,6 +78,8 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
+
+app.MapHub<NotesHub>("/notesHub");
 
 app.Run();
 

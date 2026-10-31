@@ -5,5 +5,9 @@ namespace CatalogManager.Controllers;
 public sealed class NotesEditorController : Controller
 {
     [HttpGet]
-    public IActionResult Index() => View();
+    public IActionResult Index(string documentId = "shared")
+    {
+        ViewBag.DocumentId = documentId;
+        return View();
+    }
 }

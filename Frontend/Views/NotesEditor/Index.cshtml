@@ -1,5 +1,5 @@
 ﻿@{
-    ViewData["Title"] = "Notes Editor — C12";
+    ViewData["Title"] = "Shared Notes Editor — C13";
 }
 
 <link rel="stylesheet" href="~/css/notes-editor.css" asp-append-version="true" />
@@ -7,25 +7,41 @@
 <div class="notes-editor" id="notesEditor">
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
         <div>
-            <h1 class="mb-1">Notes Editor</h1>
-            <p class="text-muted mb-0">C12 — Dynamic Markdown blocks with local autosave</p>
+            <h1 class="mb-1">Shared Notes Editor</h1>
+            <p class="text-muted mb-0">C13 — Server persistence and SignalR synchronization</p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex flex-wrap gap-2">
             <button type="button" id="notesAdd" class="btn btn-primary">+ Add block</button>
             <button type="button" id="notesTogglePreview" class="btn btn-outline-secondary" aria-pressed="false">Preview</button>
             <button type="button" id="notesClear" class="btn btn-outline-danger">Clear document</button>
         </div>
     </div>
 
-    <p class="small text-muted" id="notesSaveStatus" role="status" aria-live="polite">Loading document…</p>
+    <div class="row g-2 mb-3">
+        <div class="col-md-5">
+            <label for="notesDocumentId" class="form-label">Shared document ID</label>
+            <div class="input-group">
+                <input id="notesDocumentId" class="form-control" value="shared" maxlength="64"
+                       pattern="[A-Za-z0-9_-]+" aria-label="Shared document ID" />
+                <button id="notesOpenDocument" class="btn btn-outline-primary" type="button">Open document</button>
+            </div>
+            <div class="form-text">Open the same ID in another browser to collaborate.</div>
+        </div>
+        <div class="col-md-7 d-flex align-items-end gap-2 flex-wrap">
+            <button id="notesImportLocal" type="button" class="btn btn-outline-secondary">Import my C12 local notes</button>
+            <button id="notesReloadServer" type="button" class="btn btn-outline-secondary">Reload server version</button>
+        </div>
+    </div>
+
+    <p class="small text-muted mb-2" id="notesConnectionStatus" role="status">Connecting…</p>
+    <p class="small text-muted" id="notesSaveStatus" role="status" aria-live="polite">Loading shared document…</p>
 
     <div class="alert alert-info py-2 small">
-        Create headings, paragraphs, or lists. Use the arrow buttons to reorder blocks.
-        Edits are saved automatically in this browser using localStorage.
+        Changes are saved on the server and sent to other open browsers. Changes made simultaneously
+        may require reloading the newest document version. Do not use this shared editor for private data.
     </div>
 
     <section id="notesBlocks" class="notes-blocks" aria-label="Document blocks"></section>
-
     <div id="notesPreview" class="notes-preview border rounded p-3 mt-3" hidden></div>
     <p id="notesEmpty" class="text-muted text-center py-4" hidden>No blocks yet. Click “Add block”.</p>
 </div>
@@ -34,7 +50,6 @@
     <article class="notes-block card mb-2" data-block-id="">
         <div class="card-body p-3">
             <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
-                <label class="visually-hidden">Block type</label>
                 <select class="form-select form-select-sm notes-block-type" aria-label="Block type">
                     <option value="paragraph">Paragraph</option>
                     <option value="heading1">Heading 1</option>
@@ -46,13 +61,13 @@
                 <button type="button" class="btn btn-sm btn-outline-secondary notes-move-down" aria-label="Move block down">↓</button>
                 <button type="button" class="btn btn-sm btn-outline-danger notes-delete" aria-label="Delete block">Delete</button>
             </div>
-            <label class="visually-hidden">Block content</label>
             <textarea class="form-control notes-block-text" rows="3" aria-label="Block content"
-                      placeholder="Write here. For lists, enter one item per line."></textarea>
+                      placeholder="Write here. For lists, use one item per line."></textarea>
         </div>
     </article>
 </template>
 
 @section Scripts {
-    <script src="~/js/notes-editor.js" asp-append-version="true" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@8.0.7/dist/browser/signalr.min.js"></script>
+    <script src="~/js/notes-editor.js" asp-append-version="true"></script>
 }
