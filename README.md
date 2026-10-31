@@ -1,77 +1,130 @@
 
 # CatalogManager
 
-CatalogManager is a layered **ASP.NET Core MVC + REST API** application for managing a product catalog. It supports categories, stores, and products, persists data in PostgreSQL using Entity Framework Core, and includes automated C# tests, Postman API testing, Playwright browser-based E2E testing, GitHub Actions automation, AJAX autocomplete, data visualization, and integration with the PrivatBank currency exchange API.
+CatalogManager is a layered **ASP.NET Core MVC + REST API** application for managing a product catalog. It supports categories, stores, and products, persists data in PostgreSQL using Entity Framework Core, and includes a responsive interface, REST API, interactive map, pagination, caching, data visualization, AJAX autocomplete, currency exchange rates, and a dynamic notes editor.
+
+The project includes automated unit, integration, Postman API, and Playwright E2E tests, as well as Docker containerization and GitHub Actions automation.
 
 The project was developed for the **Web Technologies** coursework.
 
 ## Completed Coursework Stages
 
-- **C1 — MVC Application:** CRUD operations for three related entities with optional product image URLs.
-- **C5 — REST API:** JSON CRUD endpoints, DTOs, validation, and HTTP status codes.
-- **QA1 — Automated Web API Testing:** automated positive and negative API tests using Postman.
-- **B1 — Pagination API:** offset-based pagination using `skip`, `limit`, and `nextLink`.
-- **C8 — External API Integration:** interactive stores map powered by OpenStreetMap and Leaflet.
-- **B9 — API Output Caching:** in-memory response caching with expiration and tag-based invalidation.
-- **C4 — Docker Containerization:** ASP.NET Core and PostgreSQL containers using Docker Compose.
-- **C6 — Bootstrap Landing Page:** responsive product catalog and individual product landing pages.
-- **C7 — SEO Optimization:** product-specific metadata, canonical URLs, Open Graph tags, robots.txt, and Lighthouse auditing.
-- **F1 — Data Visualization:** statistical dashboard using Chart.js and PostgreSQL data.
-- **QA2 — End-to-End Testing:** automated Chromium browser tests using Playwright, xUnit, Docker, and GitHub Actions.
-- **F2 — AJAX Autocomplete:** server-side Category and Store autocomplete in product forms using Select2, jQuery, AJAX, and ASP.NET Core.
-- **B2 — External API Integration:** real-time currency exchange information from the public PrivatBank API, including a currency converter and automated service tests.
+- **C1 — MVC Application (3 points):** CRUD operations for three related entities with optional product images.
+- **C5 — REST API (3 points):** JSON CRUD endpoints, DTOs, validation, and HTTP status codes.
+- **QA1 — Automated Web API Testing (2 points):** positive and negative API testing using Postman.
+- **B1 — Pagination API (2 points):** offset pagination with `skip`, `limit`, and `nextLink`.
+- **C8 — External API Integration (3 points):** interactive stores map with OpenStreetMap and Leaflet.
+- **B9 — API Output Caching (3 points):** 30-second in-memory caching with invalidation.
+- **C4 — Docker Containerization (1 point):** ASP.NET Core and PostgreSQL services using Docker Compose.
+- **C6 — Bootstrap Landing Page (3 points):** responsive catalog and individual product landing pages.
+- **C7 — SEO Optimization (1 point):** metadata, canonical URLs, robots.txt, and Lighthouse audits.
+- **F1 — Data Visualization (2 points):** Chart.js statistical dashboard.
+- **QA2 — End-to-End Testing (3 points):** Chromium browser tests with Playwright and GitHub Actions.
+- **F2 — AJAX Autocomplete (4 points):** server-side category and store search using Select2.
+- **B2 — External API Integration (2 points):** PrivatBank exchange rates and currency converter.
+- **C12 — Dynamic Notes Editor (3 points):** browser-based block editor with automatic localStorage persistence.
+
+**Total implemented coursework stages: 14.**
+
+**Total potential coursework points: 35.**
+
+These points represent implemented coursework tasks, not an official grade awarded by the instructor.
 
 ---
 
 ## Features
 
-- **Categories:** create, view, edit, and delete categories; reject duplicate names.
-- **Stores:** manage names, addresses, and geographic coordinates.
-- **Products:** manage names, descriptions, prices, optional images, categories, and stores.
-- **Validation:** required fields, valid prices, coordinates, and related entity IDs.
-- **Deletion constraints:** prevent deleting referenced categories and stores.
-- **MVC interface:** Razor Views, Bootstrap, ViewModels, and antiforgery validation.
-- **REST API:** CRUD endpoints for categories, stores, and products.
-- **Pagination:** offset-based pagination for API collections.
-- **Stores Map:** interactive markers, popups, search, and refresh.
-- **Output caching:** 30-second API caching with invalidation.
-- **Docker:** containerized web application and PostgreSQL with persistent data.
-- **Product landing pages:** Bootstrap product cards and individual details pages.
-- **SEO:** metadata, canonical URLs, Open Graph, and robots.txt.
-- **Statistics:** three Chart.js charts with asynchronous refresh.
-- **Autocomplete:** dynamically search and select categories and stores when creating or editing products.
-- **Currency Rates:** fetch current exchange rates from the PrivatBank API.
-- **Currency Converter:** convert an amount in UAH to a selected foreign currency using the bank's selling rate.
-- **Automated testing:** xUnit, Moq, HTTP integration tests, Postman, and Playwright.
-- **GitHub Actions:** automated QA2 execution against Docker containers.
+### Catalog Management
+
+- Create, read, update, and delete categories.
+- Create, read, update, and delete stores.
+- Create, read, update, and delete products.
+- Associate products with categories and stores.
+- Validate prices, required fields, and geographic coordinates.
+- Prevent deletion of referenced categories and stores.
+- Prevent duplicate category names.
+- Support optional product image URLs.
+
+### Web Interface
+
+- Responsive Bootstrap and Razor Views.
+- Product catalog with individual product landing pages.
+- Interactive stores map using Leaflet.
+- Statistics dashboard using Chart.js.
+- AJAX autocomplete for category and store selection.
+- Currency exchange rates from PrivatBank.
+- Approximate currency conversion.
+- Dynamic block-based notes editor.
+
+### Backend and Infrastructure
+
+- REST API with CRUD operations.
+- Offset-based pagination.
+- Server-side output caching.
+- PostgreSQL persistence.
+- Entity Framework Core migrations.
+- Docker Compose support.
+- Dependency Injection and HttpClient integration.
+
+### Testing
+
+- xUnit unit tests.
+- HTTP integration tests using WebApplicationFactory.
+- Postman automated API tests.
+- Playwright browser-based E2E tests.
+- GitHub Actions automated QA2 workflow.
 
 ---
 
 ## Technology Stack
 
+### Backend
+
 - C# / .NET 10
-- ASP.NET Core MVC, Web API, Razor Views
+- ASP.NET Core MVC
+- ASP.NET Core Web API
+- Razor Views
 - Entity Framework Core 10
-- PostgreSQL 17 and Npgsql
-- Bootstrap, HTML, CSS, JavaScript
-- jQuery and Select2
-- AJAX and JSON
-- Chart.js
-- OpenStreetMap and Leaflet.js
-- PrivatBank Public API
-- HttpClient and IHttpClientFactory
-- ASP.NET Core Dependency Injection
-- System.Text.Json
+- PostgreSQL 17
+- Npgsql
 - ASP.NET Core Output Caching
-- Docker and Docker Compose
-- xUnit and Moq
+- HttpClient / IHttpClientFactory
+- Dependency Injection
+- System.Text.Json
+
+### Frontend
+
+- HTML5
+- CSS3
+- JavaScript
+- Bootstrap
+- jQuery
+- Select2
+- AJAX / Fetch API
+- Chart.js
+- Leaflet.js
+- Web Storage API / localStorage
+- Dynamic DOM manipulation
+
+### External Services
+
+- OpenStreetMap
+- PrivatBank Public API
+
+### Testing and Development
+
+- Visual Studio
+- xUnit
+- Moq
 - WebApplicationFactory
-- Microsoft Playwright for .NET
+- Microsoft Playwright
 - Chromium
-- Postman Collection Runner
+- Postman
+- Docker and Docker Compose
 - GitHub Actions
+- Coverlet
+- ReportGenerator
 - Google Chrome Lighthouse
-- Coverlet and ReportGenerator
 - Git and GitHub
 
 ---
@@ -87,26 +140,35 @@ CatalogManager/
 │       └── qa2-playwright.yml
 ├── Frontend/
 │   ├── Controllers/
+│   │   ├── CategoriesController.cs
+│   │   ├── StoresController.cs
 │   │   ├── ProductsController.cs
-│   │   ├── ProductAutocompleteController.cs
 │   │   ├── StoresMapController.cs
 │   │   ├── StatisticsController.cs
-│   │   └── CurrencyRatesController.cs
-│   ├── Services/
-│   │   ├── ICurrencyRatesService.cs
-│   │   └── PrivatBankCurrencyRatesService.cs
+│   │   ├── ProductAutocompleteController.cs
+│   │   ├── CurrencyRatesController.cs
+│   │   └── NotesEditorController.cs
 │   ├── ApiControllers/
 │   ├── Models/
 │   ├── DTOs/
+│   ├── Services/
+│   │   ├── ICurrencyRatesService.cs
+│   │   └── PrivatBankCurrencyRatesService.cs
 │   ├── Views/
+│   │   ├── Categories/
+│   │   ├── Stores/
 │   │   ├── Products/
 │   │   │   ├── Index.cshtml
 │   │   │   ├── Details.cshtml
 │   │   │   ├── Create.cshtml
 │   │   │   └── Edit.cshtml
 │   │   ├── StoresMap/
+│   │   │   └── Index.cshtml
 │   │   ├── Statistics/
+│   │   │   └── Index.cshtml
 │   │   ├── CurrencyRates/
+│   │   │   └── Index.cshtml
+│   │   ├── NotesEditor/
 │   │   │   └── Index.cshtml
 │   │   └── Shared/
 │   │       └── _Layout.cshtml
@@ -115,12 +177,14 @@ CatalogManager/
 │   │   │   ├── stores-map.js
 │   │   │   ├── statistics.js
 │   │   │   ├── product-autocomplete.js
-│   │   │   └── currency-rates.js
+│   │   │   ├── currency-rates.js
+│   │   │   └── notes-editor.js
 │   │   ├── css/
 │   │   │   ├── stores-map.css
 │   │   │   ├── product-landing.css
 │   │   │   ├── statistics.css
-│   │   │   └── product-autocomplete.css
+│   │   │   ├── product-autocomplete.css
+│   │   │   └── notes-editor.css
 │   │   └── robots.txt
 │   └── Program.cs
 ├── Application/
@@ -146,78 +210,120 @@ CatalogManager/
 └── README.md
 ```
 
-The actual `.env` file contains local environment configuration and must not be committed.
+This tree highlights the main project files and coursework components. Additional controllers, views, models, and tests may also exist.
+
+The local `.env` file must not be committed to Git.
 
 ---
 
 ## Architecture and Data Model
 
-CatalogManager follows a layered architecture.
+CatalogManager uses a layered architecture.
 
-**MVC requests:**
+### MVC Request Flow
 
-Browser → MVC Controller → Application Service → Repository → EF Core / PostgreSQL
+```text
+Browser
+  ↓
+MVC Controller
+  ↓
+Application Service
+  ↓
+Repository
+  ↓
+Entity Framework Core
+  ↓
+PostgreSQL
+```
 
-**REST API requests:**
+### REST API Request Flow
 
-HTTP Client → API Controller → Application Service → Repository → EF Core / PostgreSQL
+```text
+HTTP Client
+  ↓
+API Controller
+  ↓
+Application Service
+  ↓
+Repository
+  ↓
+Entity Framework Core
+  ↓
+PostgreSQL
+```
 
-**F2 autocomplete requests:**
+### Main Entities
 
-Select2 → AJAX GET → ProductAutocompleteController → EF Core → PostgreSQL → JSON → Select2
+**Category**
 
-**B2 currency exchange requests:**
+Stores category information. Category names are checked for duplicates.
 
-Browser → CurrencyRatesController → ICurrencyRatesService → HttpClient → PrivatBank API → JSON → Browser
+**Store**
 
-Each Product belongs to one Category and one Store.
+Stores the name, address, latitude, and longitude of a store.
 
-Categories and stores may be associated with multiple products. Foreign-key constraints protect referenced records from deletion.
+**Product**
 
-MVC uses dedicated form ViewModels:
+Stores the name, description, price, optional image URL, CategoryId, and StoreId.
+
+Each product belongs to one category and one store.
+
+Categories and stores referenced by existing products cannot be deleted.
+
+### MVC ViewModels
 
 - `CategoryFormViewModel`
 - `StoreFormViewModel`
 - `ProductFormViewModel`
 
-REST API endpoints use separate request and response DTOs.
-
-Currency exchange rates are retrieved from an external provider and do not require additional PostgreSQL tables.
+The REST API uses separate DTOs.
 
 ---
 
 ## C1 — MVC Application
 
-MVC controllers `CategoriesController`, `StoresController`, and `ProductsController` provide Create, Read, Update, and Delete operations through Razor Views.
+C1 implements CRUD operations for Categories, Stores, and Products using ASP.NET Core MVC and Razor Views.
 
-Validation is implemented using Data Annotations and application business rules.
+Features include:
 
-Form POST actions use antiforgery validation.
+- Create, Read, Update, and Delete.
+- Model validation.
+- Application business rules.
+- Antiforgery validation.
+- Related entity selection.
+- PostgreSQL persistence.
 
-The MVC interface provides the foundation for C6 product landing pages, QA2 browser testing, and F2 autocomplete.
+The MVC application provides the foundation for later coursework stages.
 
 ---
 
 ## C5 — REST API
 
-| Entity | Collection Endpoint | Resource Endpoint |
+The REST API provides JSON CRUD operations.
+
+| Entity | Collection Endpoint | Item Endpoint |
 |---|---|---|
 | Categories | `/api/categories` | `/api/categories/{id}` |
 | Stores | `/api/stores` | `/api/stores/{id}` |
 | Products | `/api/products` | `/api/products/{id}` |
 
-Supported operations include GET, POST, PUT, and DELETE.
+Supported HTTP methods:
+
+- GET
+- POST
+- PUT
+- DELETE
 
 ### HTTP Status Codes
 
-- `200 OK` — successful reads.
+- `200 OK` — successful read.
 - `201 Created` — successful creation.
 - `204 No Content` — successful update or deletion.
 - `400 Bad Request` — invalid input.
 - `404 Not Found` — missing resource.
-- `409 Conflict` — business rule violations.
+- `409 Conflict` — business rule violation.
 
-### Example: Create Product
+### Example Product Request
 
 ```http
 POST /api/products
@@ -235,34 +341,37 @@ Content-Type: application/json
 }
 ```
 
-Category and store IDs must refer to existing database records.
+The category and store IDs must reference existing database records.
 
 ---
 
 ## QA1 — Automated Postman API Testing
 
-The original QA1 implementation contains 50 requests across four folders:
+QA1 includes automated positive and negative API test scenarios using Postman.
 
-1. **Categories (13):** CRUD, duplicate names, invalid JSON, and validation.
-2. **Stores (13):** CRUD, required fields, and coordinate validation.
-3. **Products (15):** CRUD, price validation, foreign keys, and invalid JSON.
-4. **Cleanup and Relationship Checks (9):** deletion conflicts, cleanup, and missing-resource checks.
+The original QA1 collection contains 50 requests in four folders:
+
+1. Categories — 13 requests.
+2. Stores — 13 requests.
+3. Products — 15 requests.
+4. Cleanup and Relationship Checks — 9 requests.
 
 ### Automation
 
-- JavaScript pre-request and post-response scripts.
-- Assertions using `pm.test()` and `pm.expect()`.
-- Dynamic identifiers stored in collection variables.
-- Unique test data for each execution.
+- JavaScript pre-request scripts.
+- Automated response assertions.
+- Dynamic test identifiers.
+- Collection variables.
+- Unique test data.
+- Positive and negative cases.
 - Cleanup respecting foreign-key relationships.
-- Positive and negative scenarios.
 
-### Verified QA1 Results
+### Verified Results
 
-| Iterations | Passed Assertions | Failed | Errors |
-|---|---:|---:|---:|
-| 1 | 62 | 0 | 0 |
-| 2 | 124 | 0 | 0 |
+| Iterations | Passed Assertions | Failed |
+|---|---:|---:|
+| 1 | 62 | 0 |
+| 2 | 124 | 0 |
 
 Verified on 28 October 2026.
 
@@ -270,7 +379,7 @@ Verified on 28 October 2026.
 
 ## B1 — Pagination API
 
-B1 implements offset-based pagination for REST API collection endpoints.
+B1 implements offset-based pagination.
 
 ### Example Requests
 
@@ -280,11 +389,11 @@ GET /api/stores?skip=0&limit=10
 GET /api/products?skip=0&limit=10
 ```
 
-### Parameters
+Pagination parameters:
 
-- `skip` — number of records to skip.
-- `limit` — maximum number of returned records.
-- `nextLink` — URL for the following page, when available.
+- `skip`: number of records skipped.
+- `limit`: maximum records returned.
+- `nextLink`: link to the next page, if available.
 
 Paginated responses contain:
 
@@ -294,23 +403,25 @@ Paginated responses contain:
 - `totalCount`
 - `nextLink`
 
-Requests without pagination parameters retain the original C5 JSON array response.
+Queries without pagination parameters retain the original C5 array response.
 
-Pagination is performed at the database query level using Entity Framework Core.
+Pagination is performed at the database query level through Entity Framework Core.
 
-Detailed documentation: [B1_PAGINATION_GUIDE.md](B1_PAGINATION_GUIDE.md).
+Additional documentation:
+
+[B1_PAGINATION_GUIDE.md](B1_PAGINATION_GUIDE.md)
 
 ---
 
 ## C8 — Interactive Stores Map
 
-C8 integrates OpenStreetMap and Leaflet.js.
+C8 integrates OpenStreetMap using Leaflet.js.
 
-Page:
+### Page
 
 `/StoresMap`
 
-Data endpoint:
+### Data Source
 
 ```http
 GET /api/stores
@@ -318,54 +429,51 @@ GET /api/stores
 
 ### Features
 
-- Interactive OpenStreetMap map.
-- Store markers with saved coordinates.
+- OpenStreetMap tiles.
+- Markers for stores with coordinates.
 - Store information popups.
-- Search by store name.
+- Store search.
 - Visible marker counter.
-- Refresh without full page reload.
-- Geographic coordinate validation.
-- Navigation through the application menu.
+- Refresh without reloading the page.
+- Coordinate validation.
 
 ### Implementation Files
 
 | File | Responsibility |
 |---|---|
-| `Frontend/Controllers/StoresMapController.cs` | MVC controller |
-| `Frontend/Views/StoresMap/Index.cshtml` | Map page |
-| `Frontend/wwwroot/js/stores-map.js` | Map behavior |
-| `Frontend/wwwroot/css/stores-map.css` | Styling |
+| `Frontend/Controllers/StoresMapController.cs` | Controller |
+| `Frontend/Views/StoresMap/Index.cshtml` | Razor View |
+| `Frontend/wwwroot/js/stores-map.js` | JavaScript |
+| `Frontend/wwwroot/css/stores-map.css` | CSS |
 | `IntegrationTests/Tests/StoresMapIntegrationTests.cs` | Integration tests |
 
-Three integration test cases verify the map page and related resources.
-
-No additional database migrations were required.
+Three C8 integration test cases verify the page and resources.
 
 ---
 
 ## B9 — API Output Caching
 
-B9 implements in-memory server-side response caching using ASP.NET Core Output Cache.
+B9 uses ASP.NET Core Output Cache to cache eligible API GET responses.
 
-### Cache Policies
+### Policies
 
-| Policy | Resource | Duration | Tag |
+| Policy | API | Duration | Tag |
 |---|---|---|---|
-| `CategoriesCache` | Categories API | 30 seconds | `categories` |
-| `StoresCache` | Stores API | 30 seconds | `stores` |
-| `ProductsCache` | Products API | 30 seconds | `products` |
+| `CategoriesCache` | Categories | 30 seconds | `categories` |
+| `StoresCache` | Stores | 30 seconds | `stores` |
+| `ProductsCache` | Products | 30 seconds | `products` |
 
-The application uses `AddOutputCache()` and `UseOutputCache()`.
+The application uses:
 
-GET responses may be cached for 30 seconds.
+- `AddOutputCache()`
+- `UseOutputCache()`
+- `IOutputCacheStore.EvictByTagAsync()`
 
-Successful API POST, PUT, and DELETE operations invalidate relevant cache tags through `IOutputCacheStore.EvictByTagAsync()`.
+Successful API modifications invalidate relevant cache tags.
 
-Direct PostgreSQL modifications and MVC changes are not automatically covered by API-controller cache invalidation.
+Direct database and MVC changes are not automatically covered by API-controller invalidation.
 
-### Verified B9 Results
-
-The Postman collection contains 24 B9 requests.
+### Postman Results
 
 | Metric | Result |
 |---|---:|
@@ -373,27 +481,25 @@ The Postman collection contains 24 B9 requests.
 | Assertions | 48 |
 | Passed | 48 |
 | Failed | 0 |
-| Errors | 0 |
 
 Verified on 29 October 2026.
 
-These tests validate API responses and data visibility. An actual cache HIT would require additional server-side diagnostics.
+These tests verify API behavior and data visibility. They do not independently establish a server-side cache HIT.
 
 ### Limitations
 
-- Cache entries belong to a single application instance.
+- In-memory caching is instance-local.
 - Cache entries expire after 30 seconds.
-- Cache data is lost when the application process restarts.
-- The cache is not shared across multiple containers.
-- Direct database or MVC modifications may not invalidate cached responses immediately.
+- Cache data is lost on application restart.
+- Cache entries are not shared among independent application instances.
 
 ---
 
 ## C4 — Docker Containerization
 
-C4 runs CatalogManager and PostgreSQL in separate Linux containers managed by Docker Compose.
+C4 runs CatalogManager and PostgreSQL using Docker Compose.
 
-### Docker Architecture
+### Architecture
 
 ```text
 Windows Host
@@ -402,48 +508,41 @@ Windows Host
     v
 Docker Compose
     |
-    +--- web container
+    +--- web
     |    ASP.NET Core 10
     |    Port 8080
     |       |
-    |       | db:5432
     |       v
-    +--- db container
+    +--- db
          PostgreSQL 17
          Port 5432
              |
              v
-         Docker Volume
-         catalogmanager_pgdata
+         Persistent Docker Volume
 ```
 
-The application is accessible at:
+Application URL:
 
 `http://localhost:8085`
 
-The PostgreSQL database is exposed locally at:
+Local database port:
 
 `127.0.0.1:55432`
 
-### Docker Files
+### Files
 
-| File | Purpose |
-|---|---|
-| `Dockerfile` | Multi-stage .NET build |
-| `.dockerignore` | Build context exclusions |
-| `compose.yaml` | Web and PostgreSQL services |
-| `.env.example` | Example configuration |
-| `.env` | Local configuration, excluded from Git |
+- `Dockerfile`
+- `compose.yaml`
+- `.dockerignore`
+- `.env.example`
 
-### Start Docker Environment
-
-Open Windows PowerShell in the solution root.
+### Start Containers
 
 ```powershell
 docker compose up --build -d
 ```
 
-Check containers:
+### Check Status
 
 ```powershell
 docker compose ps -a
@@ -451,14 +550,14 @@ docker compose ps -a
 
 Expected state:
 
-- PostgreSQL container: Healthy.
-- ASP.NET Core container: Up.
+- PostgreSQL: Healthy.
+- Application: Up.
 
 ### Database Migrations
 
-A new Docker database requires EF Core migrations.
+A new database requires applying existing EF Core migrations.
 
-Temporarily configure the Docker database connection in the current PowerShell session:
+Configure a temporary connection string for the Docker database:
 
 ```powershell
 $env:ConnectionStrings__DefaultConnection = "Host=localhost;Port=55432;Database=CatalogManagerDb;Username=postgres;Password=YOUR_DOCKER_PASSWORD"
@@ -476,101 +575,74 @@ Remove the override:
 Remove-Item Env:ConnectionStrings__DefaultConnection
 ```
 
-### Useful Docker Commands
-
-Restart:
+### Additional Commands
 
 ```powershell
 docker compose restart
-```
-
-Stop without deleting the database volume:
-
-```powershell
+docker compose logs web --tail=80
 docker compose down
-```
-
-Start again:
-
-```powershell
 docker compose up -d
 ```
 
-View application logs:
-
-```powershell
-docker compose logs web --tail=80
-```
-
-Do not use `docker compose down -v` unless database deletion is intentional.
+Do not use `docker compose down -v` unless deleting the persistent database volume is intentional.
 
 ### Verified Results
 
-- Docker Compose configuration validated.
-- ASP.NET Core and PostgreSQL containers started.
-- PostgreSQL health checks passed.
-- EF Core migrations were applied.
-- MVC and REST API requests worked.
-- Database data survived container restarts.
-- Docker was successfully reused for QA2 automated tests.
+- Docker containers started successfully.
+- PostgreSQL health check passed.
+- Database migrations were applied.
+- MVC and API requests worked.
+- Data survived container restarts.
+- Docker was reused for QA2.
 
 ---
 
 ## C6 — Bootstrap Product Landing Pages
 
-C6 improves product presentation using Bootstrap.
+C6 provides responsive product catalog pages.
 
-### Product Catalog
+### Catalog
 
 `/Products`
 
-The catalog displays products using a responsive card layout.
-
-### Individual Product Page
+### Product Details
 
 `/Products/Details/{id}`
-
-Example:
-
-`/Products/Details/1`
 
 ### Features
 
 - Responsive product cards.
-- Dedicated product landing pages.
-- Product names and descriptions.
-- Prices and optional images.
+- Individual product pages.
+- Names, descriptions, and prices.
+- Optional images.
 - Category and store information.
 - Navigation between catalog and details.
 - Custom CSS.
-- Responsive desktop and mobile layouts.
 
 ### Implementation Files
 
-| File | Responsibility |
+| File | Purpose |
 |---|---|
-| `Frontend/Views/Products/Index.cshtml` | Product catalog |
+| `Frontend/Views/Products/Index.cshtml` | Catalog |
 | `Frontend/Views/Products/Details.cshtml` | Product details |
-| `Frontend/wwwroot/css/product-landing.css` | Product styling |
+| `Frontend/wwwroot/css/product-landing.css` | Styling |
 
-Existing MVC controllers, services, and database tables are reused.
-
-No new migrations were required.
+The existing application services and database schema are reused.
 
 ---
 
 ## C7 — SEO Optimization
 
-C7 improves technical SEO for C6 product landing pages.
+C7 improves the technical SEO of product landing pages.
 
 ### Features
 
-- Product-specific HTML page titles.
+- Product-specific page titles.
 - Meta descriptions.
 - Canonical URLs.
 - Open Graph metadata.
 - robots.txt.
-- Google Chrome Lighthouse SEO auditing.
+- Google Chrome Lighthouse auditing.
 
 ### Robots.txt
 
@@ -578,7 +650,7 @@ File:
 
 `Frontend/wwwroot/robots.txt`
 
-Public path:
+URL:
 
 `/robots.txt`
 
@@ -589,48 +661,34 @@ User-agent: *
 Allow: /
 ```
 
-These rules permit crawling but do not guarantee indexing or ranking.
-
-### Lighthouse Audit
-
-Audited URL:
-
-`https://localhost:44361/Products/Details/1`
-
-Configuration:
-
-- Navigation mode.
-- Desktop device.
-- SEO category.
+### Lighthouse Result
 
 | Metric | Result |
 |---|---:|
-| SEO Score | **100/100** |
+| SEO | 100/100 |
 | Passed Audits | 9 |
 | Not Applicable | 1 |
 | Failed Applicable Audits | 0 |
 
-Verified on 30 October 2026.
+The audit was performed on a local product details page on 30 October 2026.
 
-The result applies to the audited local product page.
+The score does not guarantee search engine ranking.
 
 ---
 
 ## F1 — Data Visualization
 
-F1 adds a statistical dashboard using Chart.js.
+F1 adds a statistical dashboard with Chart.js.
 
 ### Statistics Page
 
 `/Statistics`
 
-### Data Endpoint
+### JSON Endpoint
 
 ```http
 GET /Statistics/Data
 ```
-
-The controller reads PostgreSQL records and produces aggregated JSON data.
 
 ### Summary Indicators
 
@@ -640,38 +698,38 @@ The controller reads PostgreSQL records and produces aggregated JSON data.
 
 ### Charts
 
-1. **Products by Category:** distribution of products across categories.
-2. **Products by Store:** number of products associated with each store.
-3. **Price Distribution:** products grouped into price ranges.
+1. Products by Category.
+2. Products by Store.
+3. Product Price Distribution.
 
 ### Features
 
-- Automatic data loading.
-- Asynchronous requests with Fetch API.
-- Interactive Chart.js diagrams.
-- Refresh functionality.
-- Loading and error states.
-- Responsive Bootstrap layout.
+- Fetch API requests.
+- Chart.js rendering.
+- Interactive graphs.
+- Refresh button.
+- Error handling.
+- Responsive layout.
 
 ### Implementation Files
 
-| File | Responsibility |
+| File | Purpose |
 |---|---|
 | `Frontend/Controllers/StatisticsController.cs` | Page and JSON endpoint |
 | `Frontend/Views/Statistics/Index.cshtml` | Dashboard |
-| `Frontend/wwwroot/js/statistics.js` | Data loading and charts |
+| `Frontend/wwwroot/js/statistics.js` | Charts |
 | `Frontend/wwwroot/css/statistics.css` | Styling |
-| `IntegrationTests/Tests/StatisticsIntegrationTests.cs` | Integration tests |
+| `IntegrationTests/Tests/StatisticsIntegrationTests.cs` | Tests |
 
-Four new integration tests were introduced.
+Four new integration tests were added.
 
-### Verified F1 Results
+### Verified Results After F1
 
 | Test Type | Passed |
 |---|---:|
 | Unit Tests | 208 |
 | Integration Tests | 59 |
-| **Total** | **267** |
+| Total | 267 |
 
 Verified on 30 October 2026.
 
@@ -679,45 +737,31 @@ Verified on 30 October 2026.
 
 ## QA2 — End-to-End Testing with Playwright
 
-### Overview
+QA2 introduces browser-based E2E testing with Microsoft Playwright, Chromium, and xUnit.
 
-QA2 introduces automated real-browser testing using:
-
-- Microsoft Playwright for .NET.
-- xUnit.
-- Chromium.
-
-Unlike unit and HTTP integration tests, E2E tests interact with the application as a user would.
-
-They verify navigation, forms, validation, and selected application pages.
-
-### Test Project
-
-Project:
+### Project
 
 `E2ETests/CatalogManager.E2ETests.csproj`
 
-Test class:
+### Main Test Class
 
 `E2ETests/CatalogManagerBrowserTests.cs`
 
 ### Implemented Scenarios
 
-| Test | Scenario |
+| ID | Scenario |
 |---|---|
 | QA2-01 | Home page and navigation to Products |
-| QA2-02 | Complete Category Create → Edit → Delete workflow |
-| QA2-03 | Required category name validation |
+| QA2-02 | Category Create, Edit, and Delete |
+| QA2-03 | Required Category Name validation |
 | QA2-04 | Product catalog and Create form |
-| QA2-05 | Stores Map and search/refresh controls |
-| QA2-06 | Statistics dashboard and refresh control |
-| QA2-07 | robots.txt availability |
+| QA2-05 | Stores Map |
+| QA2-06 | Statistics dashboard and refresh |
+| QA2-07 | robots.txt |
 
-### Browser Configuration
+### Test Configuration
 
-The tests run Chromium in headless mode.
-
-The target application URL is configured through:
+The tests use:
 
 `CATALOGMANAGER_E2E_BASE_URL`
 
@@ -729,107 +773,72 @@ Docker URL:
 
 `http://localhost:8085`
 
-### Install Playwright Chromium
+### Install Playwright
 
-Build the test project:
+Build:
 
 ```powershell
 dotnet build E2ETests/CatalogManager.E2ETests.csproj
 ```
 
-Install Chromium from Windows PowerShell:
+Install Chromium on Windows:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\E2ETests\bin\Debug\net10.0\playwright.ps1" install chromium
 ```
 
-### Run QA2 with IIS Express
+### Run with Visual Studio
 
-1. Configure the local PostgreSQL database.
-2. Open `CatalogManager.slnx` in Visual Studio.
-3. Select IIS Express.
-4. Start the application using Ctrl + F5.
-5. Verify that `https://localhost:44361/Products/Create` is accessible.
-6. Open Developer PowerShell.
-7. Configure the target URL:
+1. Start CatalogManager using IIS Express.
+2. Verify that `https://localhost:44361/Products/Create` works.
+3. Open Developer PowerShell.
+4. Run:
 
 ```powershell
 $env:CATALOGMANAGER_E2E_BASE_URL = "https://localhost:44361"
-```
-
-8. Run the tests:
-
-```powershell
 dotnet test E2ETests/CatalogManager.E2ETests.csproj
 ```
 
-The application must remain running during E2E tests.
-
-### Run QA2 with Docker
-
-Start the application and database:
+### Run Against Docker
 
 ```powershell
 docker compose up --build -d
-```
-
-Configure the E2E URL:
-
-```powershell
 $env:CATALOGMANAGER_E2E_BASE_URL = "http://localhost:8085"
-```
-
-Run the tests:
-
-```powershell
 dotnet test E2ETests/CatalogManager.E2ETests.csproj
 ```
 
-### Verified Local QA2 Results
+### Verified Local Results
 
-| Environment | Total | Passed | Failed | Skipped | Duration |
-|---|---:|---:|---:|---:|---|
-| Visual Studio + IIS Express | 7 | 7 | 0 | 0 | 9.7 seconds |
-| Docker + PostgreSQL | 7 | 7 | 0 | 0 | 9.2 seconds |
+| Environment | Total | Passed | Failed | Skipped |
+|---|---:|---:|---:|---:|
+| IIS Express | 7 | 7 | 0 | 0 |
+| Docker | 7 | 7 | 0 | 0 |
 
-Verified on 30 October 2026.
+The application must be running before the E2E tests start.
 
-Later local Test Explorer executions returned `ERR_CONNECTION_REFUSED` when Playwright could not connect to the expected IIS Express URL. This is an application availability issue rather than evidence that individual test assertions failed.
+### Functional Coverage Assessment
 
-The Docker-based CI workflow provides an independently verified execution environment.
+| Functional Area | Coverage |
+|---|---|
+| Navigation | Covered |
+| Category CRUD | Covered |
+| Category required-field validation | Covered |
+| Product catalog and Create form | Partially covered |
+| Stores Map | Partially covered |
+| Statistics | Partially covered |
+| robots.txt | Covered |
+| Full Store CRUD through browser | Not covered |
+| Full Product CRUD through browser | Not covered |
 
-### E2E Functional Coverage Assessment
+This assessment describes selected end-user workflows, not line coverage.
 
-| Functional Area | Scenario | Coverage |
-|---|---|---|
-| Navigation | Home to Products | Covered |
-| Categories | Create, Edit, Delete | Covered |
-| Category validation | Required Name | Covered |
-| Products | Catalog and Create form availability | Partially covered |
-| Stores Map | Page and search/refresh controls | Partially covered |
-| Statistics | Page and refresh control | Partially covered |
-| SEO | robots.txt availability | Covered |
-| Stores CRUD | Complete browser CRUD | Not covered |
-| Products CRUD | Complete browser CRUD | Not covered |
-| API negative scenarios | Validation and conflict responses | Covered separately by QA1 |
-
-This is a functional scenario coverage assessment, not an estimate of source-code line coverage.
-
-The Category E2E workflow creates a uniquely named test record and deletes it after successful execution.
-
-Run these tests only against development or disposable test databases.
+QA2 is designed for development or disposable test databases.
 
 ---
 
-## GitHub Actions — Automated QA2 Testing
+## GitHub Actions — QA2 Automation
 
-### Overview
-
-QA2 is integrated with GitHub Actions.
-
-The workflow automatically builds and runs CatalogManager in Docker, prepares PostgreSQL, installs Chromium, and executes Playwright browser tests.
-
-This allows the E2E test suite to run independently of a developer's Visual Studio or IIS Express installation.
+QA2 is also executed automatically using GitHub Actions and Docker.
 
 ### Workflow File
 
@@ -837,277 +846,152 @@ This allows the E2E test suite to run independently of a developer's Visual Stud
 
 ### Triggers
 
-The workflow is configured for:
+- Push to `develop`.
+- Push to `main`.
+- Pull requests targeting supported branches.
+- Manual workflow execution.
 
-- Pushes to `develop`.
-- Pushes to `main`.
-- Pull requests targeting these branches.
-- Manual execution using `workflow_dispatch`.
+### Workflow Steps
 
-### Automated Workflow
-
-1. Checkout the GitHub repository.
-2. Install the .NET 10 SDK.
+1. Checkout repository.
+2. Install .NET 10.
 3. Build and start Docker Compose services.
-4. Verify container status.
-5. Install the Entity Framework Core CLI.
-6. Restore NuGet dependencies.
-7. Apply existing PostgreSQL migrations.
-8. Wait until CatalogManager becomes available.
-9. Restore and build the E2E test project.
-10. Install Playwright Chromium and required dependencies.
-11. Run the seven QA2 tests.
-12. Upload the test results as a GitHub Actions artifact.
+4. Check PostgreSQL and application containers.
+5. Restore NuGet dependencies.
+6. Install EF Core tools.
+7. Apply database migrations.
+8. Wait for the application to become available.
+9. Build E2E tests.
+10. Install Playwright Chromium.
+11. Run QA2 tests.
+12. Upload test results.
 
-### CI Environment
+### Environment
 
-GitHub Actions uses an Ubuntu runner.
+The GitHub runner uses Ubuntu.
 
-The application and PostgreSQL run in Docker containers.
+The web application and PostgreSQL run inside Docker.
 
-Playwright executes on the GitHub Actions runner and connects to:
+Playwright runs against:
 
 `http://localhost:8085`
 
-The CI database uses isolated, temporary configuration. Its test credentials are not the local development database credentials.
-
-### Verified GitHub Actions Result
-
-**Verification date:** 31 October 2026.
+### Verified Result
 
 | Metric | Result |
 |---|---|
 | Workflow | QA2 - Playwright E2E Tests |
 | Job | QA2 - Docker and Chromium |
-| Branch | `develop` |
-| Status | **Success** |
-| E2E suite | 7 automated tests |
-| Artifact | `qa2-playwright-results` |
-| Total workflow duration | Approximately 2 minutes |
+| Branch | develop |
+| Status | Success |
+| Test Scenarios | 7 |
+| Artifact | qa2-playwright-results |
 
-The successful workflow run confirms that the QA2 automation completed on GitHub-hosted infrastructure.
+The successful workflow was verified on 31 October 2026.
 
-The detailed test report is available in the workflow logs and uploaded artifact.
+### How to Verify
 
-### How to Verify QA2 on GitHub
+Open:
 
-1. Open the CatalogManager repository.
-2. Select the **Actions** tab.
-3. Open **QA2 - Playwright E2E Tests**.
-4. Select the latest successful workflow run.
-5. Open the job **QA2 - Docker and Chromium**.
-6. Expand **Run seven QA2 tests** to view the test execution output.
-7. Download `qa2-playwright-results` if the detailed TRX test report is required.
+**GitHub Repository → Actions → QA2 - Playwright E2E Tests**
 
-A successful workflow run provides evidence that the project can be tested automatically without starting the application manually on the reviewer's computer.
+Select a successful workflow run and open:
 
-### Important Notes
+**QA2 - Docker and Chromium → Run seven QA2 tests**
 
-- Docker and PostgreSQL are started automatically inside GitHub Actions.
-- Playwright Chromium is installed automatically.
-- The test runner uses the configured Docker application URL.
-- Local IIS Express is not required for CI testing.
-- GitHub Actions displays test job success or failure.
-- CI results reflect the source code committed in the corresponding Git revision.
-- GitHub Actions provides automated testing, not cloud deployment of the application.
+The uploaded TRX test results are available as a workflow artifact.
+
+GitHub Actions provides reproducible testing; it does not deploy the application to a public cloud server.
 
 ---
 
 ## F2 — AJAX Autocomplete
 
-### Overview
-
-F2 improves product creation and editing by replacing ordinary category and store dropdown interactions with asynchronous autocomplete selectors.
-
-The implementation uses:
-
-- JavaScript.
-- jQuery.
-- Select2.
-- AJAX requests.
-- ASP.NET Core MVC.
-- Entity Framework Core.
-- PostgreSQL.
-
-The goal is to allow users to find categories and stores without manually scrolling through long dropdown lists.
+F2 replaces ordinary Category and Store dropdown interactions in the Product forms with Select2-based asynchronous autocomplete.
 
 ### Product Forms
 
-Autocomplete is available on:
+- `/Products/Create`
+- `/Products/Edit/{id}`
 
-`/Products/Create`
+### Behavior
 
-`/Products/Edit/{id}`
+- Search begins after three characters.
+- AJAX delay is approximately 300 milliseconds.
+- The backend filters matching categories and stores.
+- PostgreSQL performs server-side search.
+- At most 20 matches are returned.
+- Selected IDs are submitted using the existing MVC forms.
 
-The Category and Store fields support text-based searching and selection.
-
-### Autocomplete Behavior
-
-- Search begins after the user enters at least three characters.
-- AJAX requests are delayed by approximately 300 milliseconds after typing.
-- The frontend requests matching records from the backend.
-- The backend filters results using PostgreSQL.
-- The response contains a limited number of matching items.
-- The user selects the required category or store.
-- The selected identifiers are submitted using the existing product form.
-
-The backend returns no more than 20 matching options for a search request.
-
-### Example User Scenario
-
-A user wants to create a new product.
-
-Instead of opening a long Category dropdown, the user enters:
-
-`Ele`
-
-The autocomplete selector sends a request to the backend.
-
-The server searches for matching category names and returns relevant records.
-
-The user selects the correct category.
-
-The same workflow is available for the Store field.
-
-### AJAX Architecture
+### Architecture
 
 ```text
-User types in Category / Store field
-            |
-            v
-Select2 + jQuery
-            |
-            | AJAX request
-            v
+User types search text
+       |
+       v
+Select2 / jQuery
+       |
+       v
+AJAX request
+       |
+       v
 ProductAutocompleteController
-            |
-            v
+       |
+       v
 Entity Framework Core
-            |
-            v
+       |
+       v
 PostgreSQL
-            |
-            | Matching records
-            v
-JSON response
-            |
-            v
-Autocomplete results in browser
+       |
+       v
+JSON results
+       |
+       v
+Select2 dropdown
 ```
 
-The server performs the search instead of sending the entire matching dataset to the browser for client-side filtering.
+### Files
 
-### Implemented Features
-
-- AJAX autocomplete for categories.
-- AJAX autocomplete for stores.
-- Minimum input length of three characters.
-- Configurable request delay.
-- Server-side filtering.
-- Limited search results.
-- Integration with existing MVC product forms.
-- Selected Category and Store IDs preserved in form submission.
-- Compatibility with product creation and editing.
-- Existing validation and antiforgery behavior preserved.
-
-### Implementation Files
-
-| File | Responsibility |
+| File | Purpose |
 |---|---|
-| `Frontend/Controllers/ProductAutocompleteController.cs` | Autocomplete endpoints and database search |
-| `Frontend/wwwroot/js/product-autocomplete.js` | Select2 initialization and AJAX behavior |
-| `Frontend/wwwroot/css/product-autocomplete.css` | Autocomplete styling |
-| `Frontend/Views/Products/Create.cshtml` | Product creation with autocomplete |
-| `Frontend/Views/Products/Edit.cshtml` | Product editing with autocomplete |
-| `IntegrationTests/Tests/ProductAutocompleteIntegrationTests.cs` | Automated F2 integration tests |
+| `Frontend/Controllers/ProductAutocompleteController.cs` | Autocomplete endpoints |
+| `Frontend/wwwroot/js/product-autocomplete.js` | Select2 / AJAX |
+| `Frontend/wwwroot/css/product-autocomplete.css` | Styling |
+| `Frontend/Views/Products/Create.cshtml` | Create form |
+| `Frontend/Views/Products/Edit.cshtml` | Edit form |
+| `IntegrationTests/Tests/ProductAutocompleteIntegrationTests.cs` | Tests |
 
-### Testing in Visual Studio
+### Testing
 
-F2 was tested using Visual Studio and IIS Express, without requiring Docker.
+F2 was checked through Visual Studio Test Explorer and the browser.
 
-Verification included:
-
-1. Building the updated solution.
-2. Running the existing unit tests.
-3. Running the HTTP integration tests.
-4. Opening the product Create and Edit forms.
-5. Searching categories and stores through the autocomplete selectors.
-6. Confirming that the selections work in the existing product forms.
-7. Inspecting browser AJAX behavior.
-
-Browser Developer Tools can be used to demonstrate the requests:
-
-**Chrome → F12 → Network → Fetch/XHR**
-
-### Automated F2 Tests
-
-Six additional HTTP integration test cases were introduced.
-
-The tests cover:
+The six new integration test cases cover:
 
 - Short search terms.
-- Search terms containing at least three characters.
-- Product forms using autocomplete.
+- Searches containing at least three characters.
+- Product forms with autocomplete.
 
-### Verified F2 Results
+### Verified Results
 
 | Test Type | Before F2 | After F2 |
 |---|---:|---:|
 | Unit Tests | 208 | 208 |
 | Integration Tests | 59 | 65 |
-| **Total** | **267** | **273** |
+| Total | 267 | 273 |
 
-**Result: 273 passed unit/integration tests, 0 failed.**
+Manual browser verification also confirmed that autocomplete functions correctly.
 
-The six additional integration tests passed in Visual Studio.
-
-Manual browser verification also confirmed that the autocomplete feature works.
-
-### Compatibility
-
-F2 extends the existing product editing interface without changing the product database schema.
-
-Existing entities, application services, and CRUD operations are reused.
-
-No new Entity Framework Core migration was required.
-
-The previous QA2 suite remains available and is executed independently through GitHub Actions.
-
-### Limitations
-
-- Autocomplete requires JavaScript and the Select2 library.
-- AJAX requests require access to the running ASP.NET Core backend.
-- Server-side filtering limits returned results, but actual performance with millions of records has not been benchmarked.
-- Large-scale production use may require additional indexing and query optimization.
-- Existing form-loading logic may still retrieve full option lists internally; this is a potential future optimization.
-
-### F2 Conclusion
-
-F2 improves the usability of CatalogManager product forms.
-
-Users can search for categories and stores using AJAX autocomplete instead of manually navigating long dropdown lists.
-
-The implementation reuses the existing MVC application and PostgreSQL data model.
-
-**F2 result: implemented, browser-verified, and six new integration tests passed.**
+No database migration was required.
 
 ---
 
-## B2 — External API Integration (PrivatBank)
-
-### Overview
+## B2 — PrivatBank External API Integration
 
 B2 integrates CatalogManager with the public PrivatBank currency exchange API.
 
-Unlike the C8 map integration, which uses OpenStreetMap, B2 retrieves financial information from a different external service.
+### Provider
 
-The implementation demonstrates server-to-server HTTP requests, JSON parsing, Dependency Injection, and external API error handling.
-
-### External API
-
-Provider:
-
-**PrivatBank**
+PrivatBank
 
 Base address:
 
@@ -1119,123 +1003,42 @@ Endpoint:
 GET /p24api/pubinfo?json&exchange&coursid=5
 ```
 
-The endpoint returns currency exchange information in JSON format.
+### Pages
 
-The current implementation retrieves data from the bank's public API without requiring user authentication or an API key.
+- `/CurrencyRates`
+- `/CurrencyRates/Index`
 
-### Currency Rates Page
+### Features
 
-MVC page:
+- Server-side requests using HttpClient.
+- JSON parsing using System.Text.Json.
+- Display of bank purchase and selling rates.
+- Refresh button.
+- Approximate currency conversion.
+- Handling of HTTP failures and malformed JSON.
+- Automated tests using controlled HTTP responses.
 
-`/CurrencyRates`
+### Currency Converter
 
-Alternative MVC route:
+The converter accepts an amount in UAH and a target currency.
 
-`/CurrencyRates/Index`
-
-The page is accessible from the CatalogManager navigation menu.
-
-### Implemented Features
-
-- Connection to PrivatBank using `HttpClient`.
-- HTTP GET request to the external API.
-- JSON response parsing using `System.Text.Json`.
-- Currency exchange data presented in a table.
-- Currency code and base currency information.
-- Bank purchase rates in UAH.
-- Bank selling rates in UAH.
-- Refresh button for requesting updated rates.
-- Currency conversion from UAH to a selected foreign currency.
-- Asynchronous requests.
-- Error handling for invalid HTTP responses and malformed JSON.
-- Automated tests using simulated HTTP responses.
-
-### Supported Currencies
-
-During browser verification, the API returned the following currencies:
-
-- EUR / UAH.
-- USD / UAH.
-
-The displayed set depends on the current API response.
-
-### Currency Rates Table
-
-The page includes the following columns:
-
-| Column | Description |
-|---|---|
-| Currency | Foreign currency code |
-| Base | Base currency, usually UAH |
-| Bank buys (UAH) | Amount the bank pays for one unit of foreign currency |
-| Bank sells (UAH) | Amount the bank charges for one unit of foreign currency |
-
-The values are retrieved from PrivatBank and may change.
-
-### Approximate Currency Converter
-
-The conversion section allows users to:
-
-1. Enter an amount in UAH.
-2. Select an available currency.
-3. View the approximate converted amount.
-
-The calculation uses the bank's selling rate.
-
-### Conversion Formula
+Formula:
 
 ```text
 Foreign currency amount = UAH amount / Bank selling rate
 ```
 
-For example, using the EUR selling rate of 51.30 UAH:
+Example verified during testing:
 
 ```text
 4000 UAH / 51.30 = 77.97 EUR
 ```
 
-This value matches the verified browser calculation.
-
-The converter provides an estimate and is not a real bank transaction or guaranteed exchange quotation.
-
-### B2 Architecture
-
-```text
-Google Chrome
-     |
-     v
-Currency Rates Razor View
-     |
-     v
-CurrencyRatesController
-     |
-     v
-ICurrencyRatesService
-     |
-     v
-PrivatBankCurrencyRatesService
-     |
-     v
-HttpClient
-     |
-     | HTTPS GET
-     v
-PrivatBank Public API
-     |
-     | JSON response
-     v
-System.Text.Json
-     |
-     v
-CurrencyRate objects
-     |
-     v
-Controller / JSON / Browser
-```
+The result is indicative and is not a guaranteed bank transaction quote.
 
 ### Dependency Injection
 
-The service is registered in `Frontend/Program.cs` using a typed `HttpClient`:
+`Frontend/Program.cs` registers a typed HttpClient:
 
 ```csharp
 builder.Services.AddHttpClient<
@@ -1247,116 +1050,282 @@ builder.Services.AddHttpClient<
 });
 ```
 
-`BaseAddress` specifies the external API host.
+### Architecture
 
-The request path is relative to this address:
+```text
+Browser
+    |
+    v
+CurrencyRatesController
+    |
+    v
+ICurrencyRatesService
+    |
+    v
+PrivatBankCurrencyRatesService
+    |
+    v
+HttpClient
+    |
+    v
+PrivatBank Public API
+    |
+    v
+JSON response
+    |
+    v
+Currency Rate data
+    |
+    v
+Browser
+```
 
-`p24api/pubinfo?json&exchange&coursid=5`
+### Implementation Files
 
-The HTTP timeout is set to 10 seconds.
+| File | Purpose |
+|---|---|
+| `Frontend/Services/ICurrencyRatesService.cs` | Service interface |
+| `Frontend/Services/PrivatBankCurrencyRatesService.cs` | HTTP and JSON logic |
+| `Frontend/Controllers/CurrencyRatesController.cs` | MVC controller |
+| `Frontend/Views/CurrencyRates/Index.cshtml` | Currency rates View |
+| `Frontend/wwwroot/js/currency-rates.js` | Refresh and converter |
+| `Frontend/Program.cs` | HttpClient registration |
+| `Frontend/Views/Shared/_Layout.cshtml` | Navigation |
+| `IntegrationTests/Tests/PrivatBankCurrencyRatesServiceTests.cs` | Tests |
 
-This configuration allows ASP.NET Core to inject the service into `CurrencyRatesController`.
+### Automated Tests
+
+| Test | Purpose |
+|---|---|
+| `ValidResponse_ParsesCurrencyRates` | Valid JSON |
+| `ServerError_ThrowsHttpRequestException` | HTTP failure |
+| `NoValidRates_ThrowsJsonException` | No valid rates |
+| `MalformedJson_ThrowsJsonException` | Malformed JSON |
+
+The malformed JSON test uses `Assert.ThrowsAnyAsync<JsonException>()` to allow derived exception types.
+
+### Verified Results
+
+- Four B2 service tests passed.
+- Currency Rates page opened successfully.
+- EUR and USD rates were displayed.
+- Approximate converter was verified in the browser.
+- No database migration was required.
+
+### Limitations
+
+- Requires internet access.
+- Depends on the external provider.
+- Rates may change.
+- Available currencies depend on the API response.
+- Estimates are not financial transaction quotations.
+
+---
+
+## C12 — Dynamic Notes Editor
+
+### Overview
+
+C12 introduces a dynamic block-based notes editor into CatalogManager.
+
+The editor allows a user to create and modify a document directly in the browser.
+
+The implementation uses JavaScript, DOM manipulation, and the browser's localStorage API.
+
+Unlike the existing catalog data, C12 notes are not stored in PostgreSQL.
+
+### Editor Page
+
+`/NotesEditor`
+
+Alternative MVC route:
+
+`/NotesEditor/Index`
+
+The page is integrated into the ASP.NET Core MVC application and can be opened using the navigation menu or a direct URL.
+
+### Supported Block Types
+
+The editor supports:
+
+1. **Heading** — for document headings.
+2. **Paragraph** — for regular text.
+3. **Bulleted List** — for unordered list content.
+4. **Numbered List** — for ordered list content.
+
+Blocks represent separate editable sections of the document.
+
+### Implemented Features
+
+- Create a document using editable blocks.
+- Add headings.
+- Add paragraphs.
+- Add bulleted lists.
+- Add numbered lists.
+- Edit text inside existing blocks.
+- Remove unwanted blocks.
+- Move blocks up or down.
+- Change the order of the document.
+- Show formatted document content.
+- Save changes automatically.
+- Restore previously saved content when reopening the editor.
+- Maintain the document using a dynamic JavaScript block list.
+
+### Dynamic Block Model
+
+Each document is represented in JavaScript as a collection of blocks.
+
+Conceptually, a block contains:
+
+- A block identifier.
+- A block type.
+- Text content.
+
+The block list determines the document order.
+
+When the user adds, modifies, deletes, or moves blocks, JavaScript updates the current document state and rerenders the relevant interface.
+
+### C12 Architecture
+
+```text
+Browser
+   |
+   v
+Notes Editor Razor View
+   |
+   v
+notes-editor.js
+   |
+   +---- Add / Edit / Delete / Move blocks
+   |
+   +---- Update document state
+   |
+   +---- Render HTML / Preview
+   |
+   v
+Browser localStorage
+   |
+   v
+Restore saved document on reload
+```
+
+### Automatic Saving
+
+C12 uses the Web Storage API.
+
+The document is stored in browser localStorage.
+
+This means:
+
+- Data persists after reloading the page.
+- Data normally persists after closing and reopening the browser.
+- Data belongs to the browser profile and website origin.
+- Data does not require a server request.
+- Data is not shared automatically with another browser or device.
+
+The user does not need to press a separate Save button after every modification.
+
+### Document Restoration
+
+When the editor opens, JavaScript reads previously stored document data.
+
+If valid saved content exists, the editor restores the blocks and their order.
+
+If no saved content exists, the editor initializes a new document state.
 
 ### Implementation Files
 
 | File | Responsibility |
 |---|---|
-| `Frontend/Services/ICurrencyRatesService.cs` | Service contract |
-| `Frontend/Services/PrivatBankCurrencyRatesService.cs` | External API requests and JSON parsing |
-| `Frontend/Controllers/CurrencyRatesController.cs` | MVC controller |
-| `Frontend/Views/CurrencyRates/Index.cshtml` | Currency rates interface and converter |
-| `Frontend/wwwroot/js/currency-rates.js` | Refresh and conversion behavior |
-| `Frontend/Program.cs` | HttpClient configuration and DI registration |
-| `Frontend/Views/Shared/_Layout.cshtml` | Currency Rates navigation link |
-| `IntegrationTests/Tests/PrivatBankCurrencyRatesServiceTests.cs` | Automated external API service tests |
+| `Frontend/Controllers/NotesEditorController.cs` | Opens the editor page |
+| `Frontend/Views/NotesEditor/Index.cshtml` | Razor View and editor interface |
+| `Frontend/wwwroot/js/notes-editor.js` | Dynamic blocks, editing, reordering, and persistence |
+| `Frontend/wwwroot/css/notes-editor.css` | Editor styling |
+| `Frontend/Views/Shared/_Layout.cshtml` | Notes Editor navigation link |
 
-### B2 Automated Tests
+### Testing in Visual Studio
 
-The service tests use controlled HTTP responses instead of depending on the live PrivatBank API.
+C12 was verified manually using Visual Studio and Google Chrome.
 
-This makes them repeatable even if the external provider is temporarily unavailable.
+Verification steps:
 
-Four tests were implemented:
+1. Build the updated CatalogManager solution.
+2. Start the application using IIS Express.
+3. Open `/NotesEditor`.
+4. Add a Heading block.
+5. Add a Paragraph block.
+6. Add a Bulleted List block.
+7. Add a Numbered List block.
+8. Edit the text of several blocks.
+9. Move blocks to change their order.
+10. Delete a block.
+11. Reload the page.
+12. Confirm that the remaining text and block order are restored.
+13. Close and reopen the browser and check the saved document again.
 
-| Test | Purpose |
-|---|---|
-| `ValidResponse_ParsesCurrencyRates` | Verify valid JSON parsing |
-| `ServerError_ThrowsHttpRequestException` | Verify handling of HTTP server errors |
-| `NoValidRates_ThrowsJsonException` | Verify handling of responses with no valid rates |
-| `MalformedJson_ThrowsJsonException` | Verify handling of invalid JSON |
+The user confirmed that the C12 editor works successfully.
 
-The malformed JSON test uses `Assert.ThrowsAnyAsync<JsonException>()`, allowing derived JSON exception types such as `JsonReaderException`.
+### Inspecting localStorage
 
-### Verified B2 Test Results
+Open Google Chrome Developer Tools:
 
-| Metric | Result |
-|---|---:|
-| Automated B2 service tests | 4 |
-| Passed | 4 |
-| Failed | 0 |
-| Skipped | 0 |
+**F12 → Application → Local Storage → current website origin**
 
-**All four B2 tests passed in Visual Studio Test Explorer.**
+The stored document data can be inspected there.
 
-### Browser Verification
-
-B2 was also tested manually in Google Chrome using IIS Express.
-
-Verified address:
-
-`https://localhost:44361/CurrencyRates/Index`
-
-The application successfully displayed:
-
-- Currency Rates — PrivatBank page.
-- EUR/UAH exchange rates.
-- USD/UAH exchange rates.
-- Successful data loading message.
-- Refresh rates button.
-- Approximate currency conversion section.
-
-A test input of **4000 UAH** with **EUR** selected produced an estimated result of **77.97 EUR**, using the displayed selling rate.
-
-These values were observed during testing and are not fixed exchange rates.
-
-### Error Handling
-
-The service checks HTTP response status codes before parsing the result.
-
-If the external API returns an unsuccessful HTTP status, an HTTP exception is raised.
-
-If the API returns malformed or unsuitable JSON, JSON parsing or validation raises an exception.
-
-The UI should handle temporary provider failures rather than assume that external data is always available.
+This demonstrates that the browser, rather than the PostgreSQL database, is responsible for C12 document persistence.
 
 ### Database Changes
 
-B2 does not introduce new PostgreSQL tables.
+C12 does not require new PostgreSQL tables.
 
-Existing entities, repositories, CRUD controllers, and Entity Framework Core migrations remain unchanged.
+No Entity Framework Core migration is needed.
 
-The exchange rates are loaded from the external API rather than stored as permanent database records.
+The existing CatalogManager database schema and catalog CRUD operations remain unchanged.
 
 ### Limitations
 
-- Requires an internet connection to the external API.
-- Depends on the availability of the PrivatBank service.
-- Available currencies depend on the provider's response.
-- Exchange rates may change.
-- Currency conversion is indicative, not a financial transaction.
-- A bank may apply additional rules or fees not represented in the converter.
-- Production systems may require additional caching, retry policies, monitoring, and provider-specific error handling.
+- Documents are stored only in the current browser profile.
+- Documents are not automatically synchronized across devices.
+- Clearing site storage may delete saved documents.
+- Private browsing storage may be temporary.
+- The editor requires JavaScript.
+- localStorage has limited capacity.
+- C12 does not yet provide real-time collaboration.
+- Browser file import/export is planned for a later stage.
 
-### B2 Conclusion
+### Preparation for Future Stages
 
-B2 extends CatalogManager with a second external API integration.
+The C12 document and block model provides the foundation for additional coursework features.
 
-The project now demonstrates:
+**C13 — Cross-Device Synchronization**
 
-- **C8:** integration with OpenStreetMap for store visualization.
-- **B2:** integration with PrivatBank for currency exchange information.
+Move the shared document state to the server and synchronize updates between browsers.
 
-**B2 result: implemented, browser-verified, and four service tests passed.**
+**C14 — Collaborative Change Visualization**
+
+Highlight and animate document changes received from another client.
+
+**C15 — Browser File API**
+
+Allow users to import and export documents using browser file-handling APIs.
+
+These features are planned and are not part of the completed C12 implementation.
+
+### C12 Conclusion
+
+C12 extends CatalogManager with a dynamic browser-based editor.
+
+The stage demonstrates:
+
+- DOM manipulation.
+- Dynamic JavaScript collections.
+- User interaction.
+- Editable document blocks.
+- Automatic persistence with localStorage.
+- Restoration of browser state.
+
+**C12 result: implemented and manually verified in the browser.**
 
 ---
 
@@ -1366,19 +1335,19 @@ Collection file:
 
 `Postman/CatalogManager_QA1_B1_B9.postman_collection.json`
 
-The collection includes tests for:
+The collection includes:
 
-- QA1 automated REST API testing.
-- B1 pagination.
-- B9 API output caching.
+- QA1 REST API automation.
+- B1 pagination tests.
+- B9 output caching tests.
 
 ### Import and Run
 
 1. Start CatalogManager.
 2. Import the collection into Postman.
 3. Set the `baseUrl` collection variable.
-4. Choose the relevant folder.
-5. Run it through Postman Collection Runner.
+4. Select the relevant folder.
+5. Run using Collection Runner.
 6. Review Passed, Failed, and Errors.
 
 IIS Express URL:
@@ -1389,63 +1358,68 @@ Docker URL:
 
 `http://localhost:8085`
 
-Run data-changing tests only against development or test databases.
+Use a development or test database when running data-changing tests.
 
 ---
 
 ## Local Setup Without Docker
 
-### 1. Restore Dependencies
+### Restore Dependencies
 
 ```powershell
 dotnet restore CatalogManager.slnx
 ```
 
-### 2. Configure PostgreSQL
+### Configure PostgreSQL
 
 Create the database:
 
 `CatalogManagerDb`
 
-Configure the connection with User Secrets:
+Configure User Secrets:
 
 ```powershell
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=CatalogManagerDb;Username=postgres;Password=YOUR_PASSWORD" --project Frontend
 ```
 
-Replace `YOUR_PASSWORD` with the local database password.
+Replace `YOUR_PASSWORD` with the local PostgreSQL password.
 
-### 3. Apply Migrations
+### Apply Migrations
 
 ```powershell
 dotnet ef database update --project Infrastructure --startup-project Frontend
 ```
 
-### 4. Run the Application
+### Run the Application
 
-Open the solution in Visual Studio and use the IIS Express launch profile.
+Open the solution in Visual Studio and select the IIS Express launch profile.
 
-Alternatively, launch the application using the .NET CLI:
+Press:
+
+**Ctrl + F5 — Start Without Debugging**
+
+Alternatively:
 
 ```powershell
 dotnet run --project Frontend
 ```
 
-The URL depends on the selected development profile.
+The URL depends on the launch profile.
 
-### 5. Verify Application Pages
+### Application Pages
 
-After starting CatalogManager, verify these pages:
-
-| Page | Route |
+| Feature | Route |
 |---|---|
 | Products | `/Products` |
-| Product creation | `/Products/Create` |
-| Stores map | `/StoresMap` |
+| Create Product | `/Products/Create` |
+| Stores Map | `/StoresMap` |
 | Statistics | `/Statistics` |
 | Currency Rates | `/CurrencyRates` |
+| Notes Editor | `/NotesEditor` |
 
-The Currency Rates page requires internet access to retrieve external API data.
+Currency Rates requires access to the external PrivatBank API.
+
+Notes Editor works with localStorage and does not require a new database table.
 
 ---
 
@@ -1455,17 +1429,17 @@ The solution includes three test projects.
 
 | Project | Purpose |
 |---|---|
-| `UnitTests` | Unit testing using xUnit and Moq |
-| `IntegrationTests` | HTTP integration testing using WebApplicationFactory and PostgreSQL |
-| `E2ETests` | Browser-based testing using Playwright and Chromium |
+| `UnitTests` | Unit tests with xUnit and Moq |
+| `IntegrationTests` | HTTP integration tests using WebApplicationFactory and PostgreSQL |
+| `E2ETests` | Browser-based Playwright tests |
 
 ### Integration Test Database
 
-The HTTP integration tests use a separate database:
+The integration tests use:
 
 `CatalogManagerTestDb`
 
-Configure it through User Secrets:
+Configure the connection using User Secrets:
 
 ```powershell
 dotnet user-secrets set "ConnectionStrings:TestConnection" "Host=localhost;Port=5432;Database=CatalogManagerTestDb;Username=postgres;Password=YOUR_PASSWORD" --project IntegrationTests
@@ -1483,39 +1457,31 @@ dotnet test UnitTests
 dotnet test IntegrationTests
 ```
 
-### Run E2E Tests with IIS Express
+### Run QA2 with IIS Express
 
-Keep CatalogManager running at:
-
-`https://localhost:44361`
-
-Then execute:
+Keep CatalogManager running:
 
 ```powershell
 $env:CATALOGMANAGER_E2E_BASE_URL = "https://localhost:44361"
 dotnet test E2ETests/CatalogManager.E2ETests.csproj
 ```
 
-### Run E2E Tests with Docker
+### Run QA2 with Docker
 
-Keep CatalogManager running at:
-
-`http://localhost:8085`
-
-Then execute:
+Keep the Docker environment running:
 
 ```powershell
 $env:CATALOGMANAGER_E2E_BASE_URL = "http://localhost:8085"
 dotnet test E2ETests/CatalogManager.E2ETests.csproj
 ```
 
-### Run E2E Tests Automatically on GitHub
+### Run QA2 on GitHub
 
 Open:
 
-**GitHub Repository → Actions → QA2 - Playwright E2E Tests**
+**GitHub → Actions → QA2 - Playwright E2E Tests**
 
-The workflow automatically prepares Docker, PostgreSQL, the application, Playwright, and Chromium.
+The workflow builds and launches Docker, prepares PostgreSQL, installs Chromium, runs the tests, and uploads the results.
 
 ### Last Confirmed Test Results
 
@@ -1523,27 +1489,30 @@ The workflow automatically prepares Docker, PostgreSQL, the application, Playwri
 |---|---:|
 | Unit Tests | 208 |
 | Integration Tests before B2 | 65 |
-| Additional B2 service tests | 4 |
+| Additional B2 Service Tests | 4 |
 | Playwright E2E Tests | 7 |
-| **Total verified test cases** | **284** |
+| **Total verified cases across separate runs** | **284** |
 
-**Important:** The 65 integration tests and 208 unit tests were confirmed before B2. All four new B2 service tests passed separately. The seven E2E tests passed in an earlier GitHub Actions run.
+Important:
 
-The combined figure of **284** represents confirmed test cases across these separate runs, not a newly verified single execution of the entire updated solution.
-
-A full regression run after B2 is recommended before the final coursework defense.
+- These results were verified across separate test executions.
+- They do not represent one single completed run of the entire updated solution.
+- C12 was verified manually in the browser.
+- No new automated C12 test count is claimed.
+- A complete regression run after C12 is recommended before the final coursework defense.
 
 ---
 
 ## Code Coverage
 
-Collect C# code coverage:
+Collect C# code coverage for the appropriate test projects:
 
 ```powershell
-dotnet test CatalogManager.slnx --collect:"XPlat Code Coverage"
+dotnet test UnitTests --collect:"XPlat Code Coverage"
+dotnet test IntegrationTests --collect:"XPlat Code Coverage"
 ```
 
-The E2E project requires a running web application, so for reliable coverage collection, unit and integration tests should be run separately from browser tests.
+The Playwright project requires a running application and is executed separately.
 
 Install ReportGenerator if necessary:
 
@@ -1551,7 +1520,7 @@ Install ReportGenerator if necessary:
 dotnet tool install --global dotnet-reportgenerator-globaltool
 ```
 
-Generate the combined report:
+Generate a combined report:
 
 ```powershell
 reportgenerator -reports:"UnitTests/TestResults/**/coverage.cobertura.xml;IntegrationTests/TestResults/**/coverage.cobertura.xml" -targetdir:"CoverageReport" -reporttypes:"Html;Cobertura"
@@ -1561,34 +1530,33 @@ Open:
 
 `CoverageReport/index.html`
 
-The previously reviewed pre-C5 coverage report showed:
+An earlier pre-C5 coverage report showed:
 
 - Line coverage: 76.1%.
 - Branch coverage: 77.7%.
 - Application layer line coverage: 100%.
 
-These are historical measurements and are not claimed as current B2 coverage results.
-
-QA2 functional scenario coverage is documented separately.
+These historical results are not claimed as current C12 code coverage.
 
 ---
 
 ## Security Notes
 
-- Never commit PostgreSQL passwords, API tokens, or secret connection strings.
-- Keep local `.env` files excluded from Git.
-- Use `.env.example` for configuration documentation.
-- Use User Secrets for local development credentials.
-- Use GitHub Secrets for sensitive CI configuration when needed.
-- Run data-changing tests only against development or test databases.
-- Check exported Postman collections for credentials.
+- Never commit PostgreSQL passwords or API tokens.
+- Keep `.env` excluded from Git.
+- Use User Secrets for development connections.
+- Use GitHub Secrets for sensitive automation configuration.
+- Check Postman exports for credentials.
+- Run data-changing tests against development or test databases.
 - MVC forms use antiforgery protection.
-- REST API inputs use DTO validation and business rules.
+- REST API inputs use validation and business rules.
 - Docker PostgreSQL is bound to localhost.
-- `robots.txt` is not an access-control mechanism.
-- The current PrivatBank API integration does not require an API key.
-- Do not treat third-party currency data as a guaranteed financial quotation.
-- Public deployment would require further security hardening.
+- robots.txt is not an access control mechanism.
+- Exchange rates are indicative.
+- localStorage is not a secure location for passwords or sensitive data.
+- Avoid placing confidential information in the C12 notes editor.
+- Server-side synchronization introduced in future stages will require additional security and data validation.
+- Production deployment requires additional hardening.
 
 ---
 
@@ -1596,53 +1564,77 @@ QA2 functional scenario coverage is documented separately.
 
 ### Implemented and Verified
 
-- **C1 — MVC Application:** implemented; video defense recorded.
-- **C5 — REST API:** implemented and tested.
-- **QA1 — Automated Web API Testing:** 62/62 and 124/124 assertions passed.
-- **B1 — Pagination API:** implemented and verified.
-- **C8 — Interactive Stores Map:** implemented and verified.
-- **B9 — API Output Caching:** 48/48 Postman assertions passed.
-- **C4 — Docker Containerization:** verified with PostgreSQL 17 and persistent data.
-- **C6 — Bootstrap Landing Page:** implemented and verified.
-- **C7 — SEO Optimization:** Lighthouse SEO score of 100/100.
-- **F1 — Data Visualization:** implemented with three Chart.js diagrams.
-- **QA2 — End-to-End Testing:** seven Playwright tests; GitHub Actions workflow successfully executed.
-- **F2 — AJAX Autocomplete:** implemented and browser-verified; six new integration tests passed.
-- **B2 — External API Integration:** PrivatBank currency page and converter implemented; four service tests passed.
+- **C1 — MVC Application:** completed; video defense recorded.
+- **C5 — REST API:** completed.
+- **QA1 — Automated API Testing:** 62/62 and 124/124 assertions passed.
+- **B1 — Pagination:** completed.
+- **C8 — Interactive Stores Map:** completed.
+- **B9 — Output Caching:** 48/48 Postman assertions passed.
+- **C4 — Docker:** completed.
+- **C6 — Bootstrap Landing Pages:** completed.
+- **C7 — SEO:** Lighthouse SEO score 100/100.
+- **F1 — Data Visualization:** completed.
+- **QA2 — E2E Testing:** seven Playwright tests with successful GitHub Actions automation.
+- **F2 — AJAX Autocomplete:** completed; six new integration tests passed.
+- **B2 — PrivatBank Integration:** completed; four service tests passed.
+- **C12 — Dynamic Notes Editor:** completed and manually verified.
 
 ### Latest Testing Summary
 
-- **208** unit tests passed in the last confirmed unit test run.
-- **65** integration tests passed before B2.
-- **4** additional B2 service tests passed.
-- **7** Playwright E2E tests passed through automated GitHub Actions.
-- **284** test cases accounted for across separately confirmed runs.
+- 208 unit tests in the latest confirmed unit test run.
+- 65 integration tests confirmed before B2.
+- Four additional B2 service tests passed.
+- Seven QA2 browser tests passed in GitHub Actions.
+- 284 test cases accounted for across these separate runs.
+- C12 browser functionality verified manually.
+
+### Coursework Points
+
+| Coursework Group | Points |
+|---|---:|
+| Implemented stages before C12 | 32 |
+| C12 — Dynamic Notes Editor | 3 |
+| **Total potential points** | **35** |
+
+These points are for completed implementations and are not an officially awarded course grade.
 
 ### Remaining Tasks
 
-- Verify that no local `.env` files are tracked in Git.
-- Independently verify actual B9 Cache HIT using server-side diagnostics.
-- Confirm a complete regression run after the B2 changes.
-- Confirm GitHub Actions success for the latest B2 commit.
-- Prepare a combined F1, QA2, F2, and B2 video defense.
+- Verify GitHub Actions after the latest changes.
+- Confirm that no local `.env` files are tracked by Git.
+- Perform a complete regression check before final submission.
+- Independently verify B9 cache HIT using diagnostics.
+- Implement C13, C14, and C15.
+- Prepare a combined defense after completing the next four-stage group.
 
 ### Planned Next Stages
 
-- **Combined coursework defense:** F1 + QA2 + F2 + B2.
-- **C9 — Analytics Integration (1 point):** deferred optional stage.
+**C13 — Cross-Device Synchronization (2 points)**
 
-### Combined Defense Plan
+Extend the notes editor with server-side persistence and synchronization across browser sessions, potentially using SignalR.
 
-The next defense covers four completed coursework stages:
+**C14 — Collaborative Change Visualization (3 points)**
+
+Show and visually highlight edits made in another browser.
+
+**C15 — Browser File API (3 points)**
+
+Implement import and export of documents using browser file-handling APIs.
+
+### Upcoming Defense
+
+The next combined defense will cover:
 
 | Stage | Description | Points |
 |---|---|---:|
-| F1 | Data Visualization with Chart.js | 2 |
-| QA2 | End-to-End Testing with Playwright | 3 |
-| F2 | AJAX Autocomplete with Select2 | 4 |
-| B2 | PrivatBank External API Integration | 2 |
+| C12 | Dynamic Notes Editor | 3 |
+| C13 | Cross-Device Synchronization | 2 |
+| C14 | Collaborative Change Visualization | 3 |
+| C15 | Browser File API | 3 |
 | **Total** | | **11** |
 
-The defense should demonstrate the implementation, relevant code, automated tests, and working browser interfaces.
+After successfully implementing all four stages, the potential total will reach **43 points**.
 
-CatalogManager is developed incrementally using Git commits, completion tags, automated tests, Docker, and GitHub Actions.
+---
+
+CatalogManager is developed incrementally using Git commits, completion tags, automated testing, Docker, and GitHub Actions.
