@@ -1,5 +1,5 @@
 CatalogManager
-CatalogManager is a layered ASP.NET Core MVC + REST API application for managing a product catalog. It supports categories, stores, and products, persists data in PostgreSQL using Entity Framework Core, and includes interactive maps, pagination, caching, data visualization, AJAX autocomplete, external currency exchange rates, and a collaborative block-based notes editor with browser-based file import and export.
+CatalogManager is a layered ASP.NET Core MVC + REST API application for managing a product catalog. It supports categories, stores, and products, persists data in PostgreSQL using Entity Framework Core, and includes interactive maps, pagination, caching, data visualization, AJAX autocomplete, external currency exchange rates, a collaborative block-based notes editor with browser-based file import and export, and full-text product search powered by Lucene.NET.
 
 The project includes automated unit, integration, Postman API, and Playwright E2E testing, Docker containerization, and GitHub Actions automation.
 
@@ -23,7 +23,8 @@ C12	Dynamic notes editor	3
 C13	Cross-browser synchronization with SignalR	2
 C14	Collaborative change visualization	3
 C15	Browser File API import and export	3
-Total	16 implemented stages	40
+B4	Lucene.NET full-text product search API	3
+Total	18 implemented stages	46
 
 
 These are potential coursework points, not an officially awarded grade.
@@ -49,6 +50,7 @@ Web Interface
 - Recent remote changes history.
 - Import JSON documents through the browser File API.
 - Export shared documents as JSON or Markdown files.
+- Search product names and descriptions through a Lucene.NET-powered full-text search page.
 Infrastructure
 - REST API with CRUD operations.
 - Offset-based pagination.
@@ -58,6 +60,7 @@ Infrastructure
 - GitHub Actions automation.
 - Server-side JSON persistence for shared notes.
 - Document version checks for concurrent editing.
+- On-demand Lucene.NET RAM index rebuilt from the current product catalog for each search request.
 Testing
 - xUnit and Moq.
 - HTTP integration tests with WebApplicationFactory.
@@ -74,6 +77,7 @@ Backend
 - Npgsql
 - ASP.NET Core SignalR
 - ASP.NET Core Output Caching
+- Lucene.NET 4.8 (Analysis.Common and QueryParser)
 - HttpClient and IHttpClientFactory
 - Dependency Injection
 - System.Text.Json
@@ -1419,6 +1423,76 @@ C15 Conclusion
 C15 demonstrates practical browser file handling by reading local JSON files, validating imported data, creating downloadable JSON and Markdown content, and connecting the result to the existing SignalR-based collaborative editor.
 
 C15 result: implemented and manually verified.
+B4 — Full-Text Product Search with Lucene.NET
+Overview
+B4 adds full-text searching to the existing C5 product catalog REST API using Lucene.NET. It indexes product names and descriptions and returns matching products ranked by Lucene relevance score.
+
+Coursework value: 3 points.
+Technologies
+- Lucene.Net (4.8.0-beta00018)
+- Lucene.Net.Analysis.Common (4.8.0-beta00018)
+- Lucene.Net.QueryParser (4.8.0-beta00018)
+- ASP.NET Core MVC and Web API
+- Existing IProductService and Entity Framework Core/PostgreSQL catalog data
+Search API
+GET /api/search/products?q=laptop
+GET /api/search/products?q=laptop&limit=10
+The API returns JSON search results. When a matching product is present, the response includes the product's ID, name, description, price, image URL, category ID, store ID and relevance score. The query is limited to 100 characters, and the requested result limit is clamped to the supported range of 1–50. An empty search returns no matches.
+Search Page
+/ProductSearch
+
+The Razor page lets users enter search text and view product results with links to existing product details pages.
+How the Search Works
+HTTP request / ProductSearch page
+            |
+            v
+ProductSearchApiController / ProductSearchController
+            |
+            v
+ProductSearchService
+            |
+            +-- IProductService.GetAllAsync()
+            |          |
+            |          v
+            |    PostgreSQL products
+            |
+            +-- Lucene RAMDirectory
+            +-- StandardAnalyzer
+            +-- IndexWriter (name and description)
+            +-- MultiFieldQueryParser
+            +-- IndexSearcher
+            |
+            v
+Ranked product results
+The service retrieves current products using the existing application service and constructs an in-memory Lucene index for each search request. Consequently, products created, updated, or deleted through the existing MVC/API flows are reflected in subsequent searches without requiring changes to existing CRUD controllers.
+
+Trade-off: rebuilding the index for every search is appropriate for a small coursework catalog but inefficient for high traffic or large datasets. A production implementation would retain a persistent index and update it incrementally as products change.
+Implementation Files
+File	Responsibility
+Frontend/Services/ProductSearchService.cs	Lucene index construction, analysis, search and result mapping
+Frontend/ApiControllers/ProductSearchApiController.cs	JSON search endpoint
+Frontend/Controllers/ProductSearchController.cs	MVC search page
+Frontend/Views/ProductSearch/Index.cshtml	Search form and results
+Frontend/Program.cs	Dependency injection and routing registration
+Frontend/Views/Shared/_Layout.cshtml	Optional search navigation link
+Frontend/CatalogManager.csproj	Lucene.NET NuGet package references
+
+
+Manual Verification
+The B4 implementation was checked locally and the user confirmed it works.
+1. Open /ProductSearch.
+2. Search for a term present in a product name or description.
+3. Check the product results and product-detail links.
+4. Open /api/search/products?q=laptop and inspect the JSON response; actual matches depend on the products in the local database.
+5. Add or edit a product, then repeat a relevant search to verify the current catalog is used.
+6. Search for a term with no matches and check the empty result.
+No additional B4 automated-test count is claimed without a separately verified test run. No new PostgreSQL tables or EF Core migrations were required.
+Limitations
+- Each search rebuilds an in-memory index, which increases CPU usage as the catalog grows.
+- Searches are based on the latest products returned by IProductService, not an independently stored Lucene index.
+- Search behavior depends on tokenization and Lucene.NET analyzer rules.
+- B4 adds search functionality but does not replace the existing F2 Select2 autocomplete.
+B4 result: implemented and manually verified.
 Postman Collection — QA1 + B1 + B9
 File:
 
@@ -1553,7 +1627,7 @@ A total of 277 C# tests passed in the latest observed local run.
 
 The local QA2 connection failures should be resolved by running the tests while the application is accessible.
 
-No new automated C12, C13, or C14 tests are claimed.
+No new automated C12, C13, C14, C15, or B4 test count is claimed.
 Code Coverage
 Collect coverage:
 
@@ -1626,11 +1700,4 @@ Implemented and Verified
 - C13 — Shared Notes with SignalR.
 - C14 — Collaborative Change Visualization.
 - C15 — Browser File API import and JSON/Markdown export.
-Latest Testing Summary
-- 208 unit tests passed.
-- 69 integration tests passed.
-- Seven existing QA2 browser scenarios previously passed.
-- C12, C13, and C14 verified manually.
-- C14 document ID handling corrected.
-- C15 import/export tested manually.
-- No new automated C14 or C15 test count is claimed.
+- B4 — Lucene.NET Full-Text Product Search API.

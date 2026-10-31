@@ -45,6 +45,9 @@ builder.Services.AddScoped<IStoreService, StoreService>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
 
+// B4: Lucene.NET full-text product search
+builder.Services.AddScoped<ProductSearchService>();
+
 builder.Services.AddHttpClient<
     ICurrencyRatesService,
     PrivatBankCurrencyRatesService>(client =>
@@ -73,6 +76,9 @@ app.UseOutputCache();
 app.UseAuthorization();
 
 app.MapStaticAssets();
+
+// B4: enable attribute-routed API endpoints
+app.MapControllers();
 
 app.MapControllerRoute(
     name: "default",

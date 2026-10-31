@@ -1,0 +1,58 @@
+﻿@model IReadOnlyList<CatalogManager.Services.ProductSearchResult>
+
+@{
+    ViewData["Title"] = "Product Search";
+    var query = ViewBag.Query as string ?? "";
+    var error = ViewBag.Error as string;
+}
+
+<div class="container py-4">
+    <h1 class="mb-3">Product Search</h1>
+    <p class="text-muted">B4 — Full-text search powered by Lucene.NET.</p>
+
+    <form method="get" asp-controller="ProductSearch" asp-action="Index"
+          class="row g-2 mb-4">
+        <div class="col-md-9">
+            <label for="q" class="form-label">Search by name or description</label>
+            <input id="q" name="q" value="@query" class="form-control"
+                   maxlength="100" placeholder="e.g. laptop" />
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+            <button class="btn btn-primary w-100" type="submit">Search</button>
+        </div>
+    </form>
+
+    @if (!string.IsNullOrWhiteSpace(error))
+    {
+        <div class="alert alert-danger">@error</div>
+    }
+    else if (!string.IsNullOrWhiteSpace(query))
+    {
+        <p><strong>@Model.Count</strong> result(s) for <strong>@query</strong></p>
+
+        @if (Model.Count == 0)
+        {
+            <div class="alert alert-info">No matching products found.</div>
+        }
+        else
+        {
+            <div class="row row-cols-1 row-cols-md-2 g-3">
+                @foreach (var item in Model)
+                {
+                    <div class="col">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">@item.Name</h5>
+                                <p class="card-text">@item.Description</p>
+                                <p class="fw-semibold">@item.Price.ToString("0.00")</p>
+                                <a class="btn btn-outline-primary"
+                                   asp-controller="Products" asp-action="Details"
+                                   asp-route-id="@item.Id">View product</a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>
