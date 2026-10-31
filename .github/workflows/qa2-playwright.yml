@@ -1,0 +1,104 @@
+
+name: QA2 - Playwright E2E Tests
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qa2-e2e:
+    name: QA2 - Docker and Chromium
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      POSTGRES_PASSWORD: "QA2_CI_Local_Only_2026"
+      CATALOGMANAGER_E2E_BASE_URL: "http://localhost:8085"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Build and start Docker containers
+        run: docker compose up --build -d
+
+      - name: Check container status
+        run: docker compose ps -a
+
+      - name: Install EF Core CLI
+        run: |
+          dotnet tool install --global dotnet-ef --version "10.0.*"
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+
+      - name: Apply database migrations
+        env:
+          ConnectionStrings__DefaultConnection: "Host=localhost;Port=55432;Database=CatalogManagerDb;Username=postgres;Password=QA2_CI_Local_Only_2026"
+        run: |
+          dotnet ef database update \
+            --project Infrastructure \
+            --startup-project Frontend
+
+      - name: Check application readiness
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent \
+              http://localhost:8085/Products/Create \
+              > /dev/null; then
+              echo "CatalogManager is ready."
+              exit 0
+            fi
+
+            echo "Waiting for CatalogManager..."
+            sleep 2
+          done
+
+          echo "CatalogManager did not become ready."
+          docker compose logs web --tail=100
+          exit 1
+
+      - name: Restore and build E2E tests
+        run: |
+          dotnet restore E2ETests/CatalogManager.E2ETests.csproj
+          dotnet build E2ETests/CatalogManager.E2ETests.csproj \
+            --configuration Release \
+            --no-restore
+
+      - name: Install Playwright Chromium
+        run: |
+          pwsh E2ETests/bin/Release/net10.0/playwright.ps1 \
+            install --with-deps chromium
+
+      - name: Run seven QA2 tests
+        run: |
+          dotnet test E2ETests/CatalogManager.E2ETests.csproj \
+            --configuration Release \
+            --no-build \
+            --logger "trx;LogFileName=qa2-results.trx" \
+            --results-directory ./QA2TestResults
+
+      - name: Upload QA2 test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa2-playwright-results
+          path: QA2TestResults/
+          if-no-files-found: ignore
+
+      - name: Show Docker logs on failure
+        if: failure()
+        run: docker compose logs --tail=150
