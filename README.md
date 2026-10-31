@@ -1,5 +1,5 @@
 CatalogManager
-CatalogManager is a layered ASP.NET Core MVC + REST API application for managing a product catalog. It supports categories, stores, and products, persists data in PostgreSQL using Entity Framework Core, and includes interactive maps, pagination, caching, data visualization, AJAX autocomplete, external currency exchange rates, a collaborative block-based notes editor with browser-based file import and export, full-text product search powered by Lucene.NET, and drag-and-drop reordering of notes blocks.
+CatalogManager is a layered ASP.NET Core MVC + REST API application for managing a product catalog. It supports categories, stores, and products, persists data in PostgreSQL using Entity Framework Core, and includes interactive maps, pagination, caching, data visualization, AJAX autocomplete, external currency exchange rates, a collaborative block-based notes editor with browser-based file import and export, full-text product search powered by Lucene.NET, drag-and-drop reordering of notes blocks, and a connectivity comparison of WebSockets, Long Polling, and Adaptive Polling.
 
 The project includes automated unit, integration, Postman API, and Playwright E2E testing, Docker containerization, and GitHub Actions automation.
 
@@ -25,7 +25,8 @@ C14	Collaborative change visualization	3
 C15	Browser File API import and export	3
 B4	Lucene.NET full-text product search API	3
 F3	Drag-and-drop notes block reordering	1
-Total	19 implemented stages	47
+C10	WebSockets, Long Polling, and Adaptive Polling comparison	5
+Total	20 implemented stages	52
 
 
 These are potential coursework points, not an officially awarded grade.
@@ -53,6 +54,8 @@ Web Interface
 - Export shared documents as JSON or Markdown files.
 - Search product names and descriptions through a Lucene.NET-powered full-text search page.
 - Reorder notes blocks by dragging a handle, with automatic saving and cross-browser synchronization.
+- Compare event delivery through native WebSockets, Long Polling, and Adaptive Polling on /Connectivity.
+- Display the last 200 server-side product and demo events while the application is running.
 Infrastructure
 - REST API with CRUD operations.
 - Offset-based pagination.
@@ -63,6 +66,7 @@ Infrastructure
 - Server-side JSON persistence for shared notes.
 - Document version checks for concurrent editing.
 - On-demand Lucene.NET RAM index rebuilt from the current product catalog for each search request.
+- In-memory C10 event store with asynchronous notifications and bounded history (200 events).
 Testing
 - xUnit and Moq.
 - HTTP integration tests with WebApplicationFactory.
@@ -80,6 +84,7 @@ Backend
 - ASP.NET Core SignalR
 - ASP.NET Core Output Caching
 - Lucene.NET 4.8 (Analysis.Common and QueryParser)
+- ASP.NET Core native WebSocket support and asynchronous long-poll endpoints
 - HttpClient and IHttpClientFactory
 - Dependency Injection
 - System.Text.Json
@@ -99,6 +104,7 @@ Frontend
 - CSS animations and transitions
 - Browser File API, FileReader, Blob, and object URLs
 - HTML Drag and Drop API
+- Native WebSocket API, Fetch API, AbortController
 External Services
 - OpenStreetMap
 - PrivatBank Public API
@@ -148,7 +154,8 @@ CatalogManager/
 
 │   │   ├── CurrencyRatesController.cs
 
-│   │   └── NotesEditorController.cs
+│   │   ├── NotesEditorController.cs
+│   │   └── ConnectivityController.cs
 
 │   ├── Hubs/
 
@@ -160,7 +167,8 @@ CatalogManager/
 
 │   │   ├── PrivatBankCurrencyRatesService.cs
 
-│   │   └── SharedNotesStore.cs
+│   │   ├── SharedNotesStore.cs
+│   │   └── ConnectivityEventStore.cs
 
 │   ├── ApiControllers/
 
@@ -182,6 +190,8 @@ CatalogManager/
 
 │   │   ├── CurrencyRates/
 
+│   │   ├── Connectivity/
+│   │   │   └── Index.cshtml
 │   │   ├── NotesEditor/
 
 │   │   │   └── Index.cshtml
@@ -202,7 +212,8 @@ CatalogManager/
 
 │   │   │   ├── currency-rates.js
 
-│   │   │   └── notes-editor.js
+│   │   │   ├── notes-editor.js
+│   │   │   └── connectivity.js
 
 │   │   ├── css/
 
@@ -214,7 +225,8 @@ CatalogManager/
 
 │   │   │   ├── product-autocomplete.css
 
-│   │   │   └── notes-editor.css
+│   │   │   ├── notes-editor.css
+│   │   │   └── connectivity.css
 
 │   │   └── robots.txt
 
@@ -1433,6 +1445,83 @@ Limitations
 - Reordering does not add user authentication or document-level access control.
 F3 Conclusion
 F3 demonstrates interactive HTML drag-and-drop, dynamic UI reordering, and persistent shared document state. F3 result: implemented and manually verified.
+C10 — Connectivity: WebSockets, Long Polling and Adaptive Polling
+Objective and coursework requirement
+C10 (5 points) compares three client-server interaction mechanisms in a non-chat scenario. CatalogManager demonstrates real-time catalog event notifications and includes a comparison of network usage, delivery characteristics and protocol overhead.
+
+Page: /Connectivity (also /Connectivity/Index). Events arise from demo publishing and Product Create, Update and Delete operations in the MVC and REST API paths.
+Implementation
+- Native WebSockets: /Connectivity/Socket accepts a persistent WebSocket connection. The browser subscribes with subscribe:<lastId>. New events can be pushed without repeated HTTP GET requests.
+- Long Polling: GET /Connectivity/LongPoll?after=<lastId> holds an HTTP request until an event is published or 20 seconds elapse. The client immediately issues a new request after each response.
+- Adaptive Polling: GET /Connectivity/Poll?after=<lastId> returns immediately. JavaScript starts with a 500 ms interval, increases the interval following empty responses (up to 5000 ms), and resets it when events arrive.
+- Latest state: GET /Connectivity/Latest returns the current event ID and application instance ID; the latter supports detecting restarts when restoring client cursors.
+- Manual event generation: POST /Connectivity/DemoEvent publishes a demonstration event using MVC antiforgery validation.
+- Event history: a bounded in-memory ConnectivityEventStore retains the 200 most recent events until the server process restarts. The browser retrieves them using GET /Connectivity/Poll?after=0 and displays them under Server event history.
+Main files
+File	Responsibility
+Frontend/Services/ConnectivityEventStore.cs	Thread-safe bounded event log, event IDs, asynchronous waiting and cancellation handling
+Frontend/Controllers/ConnectivityController.cs	Comparison page, Poll/LongPoll/Socket/Latest/DemoEvent endpoints
+Frontend/Views/Connectivity/Index.cshtml	Side-by-side comparison and demo form
+Frontend/wwwroot/js/connectivity.js	Start/Stop controls, three protocols, counters, history and page lifecycle
+Frontend/wwwroot/css/connectivity.css	Status styles and event feeds
+Frontend/Controllers/ProductsController.cs	Product change event publication through MVC actions
+Frontend/ApiControllers/ProductsApiController.cs	Product change event publication through API actions
+Frontend/Program.cs	Registration of the shared event store and WebSocket middleware
+Frontend/Views/Shared/_Layout.cshtml	Connectivity navigation link
+
+
+No additional NuGet packages or EF Core migrations were needed for C10.
+How events are delivered
+Product MVC/API Create, Update, Delete       Publish demo event
+                  |                                  |
+                  +------------- Publish ------------+
+                                  |
+                          ConnectivityEventStore
+                                  |
+                  +---------------+----------------+
+                  |               |                |
+             WebSocket        Long Poll          Adaptive Poll
+             push frames      waiting GET        periodic GET
+                  |               |                |
+                  +---------------+----------------+
+                                  |
+                            Browser counters
+                                  |
+                     Shared server event history
+Comparative analysis — required by C10
+Criterion	WebSockets	Long Polling	Adaptive Polling
+Connection model	Persistent, bidirectional	Repeated HTTP requests, each held while waiting	Short HTTP requests on a changing timer
+Delivery of a new event	Server can push immediately on the open socket	Server responds to the pending request when an event appears	Event is discovered on the next scheduled poll
+Requests during inactivity	Normally one established connection	One long-lived request approximately every 20 seconds, plus reconnects	Frequent requests; the interval backs off to 5 seconds
+Protocol overhead	Initial handshake and WebSocket framing; no HTTP header on every event	HTTP headers for each request and response	HTTP headers for every poll, including empty responses
+Resource trade-off	Server maintains an open socket and connection state	Server maintains a pending request and asynchronous wait	No long-lived server connection, but repeated requests consume network and CPU time
+Expected response latency	Generally low for a healthy open connection	Generally low while a long poll is active	Bounded approximately by the polling interval, plus processing and network latency
+Main benefit	Low-latency event push	Works with conventional HTTP request/response	Simple client logic and dynamically adjustable request rate
+
+
+Interpretation: WebSockets generally have lower per-event request overhead for active real-time updates. Long Polling trades repeated HTTP overhead for near-immediate notification. Adaptive Polling reduces idle traffic as the interval grows, but may delay detection of updates. Actual results depend on workload, browser, server and network conditions.
+Metrics and measurement limits
+The UI reports:
+- Requests / connections: one count for establishing a WebSocket versus HTTP requests for the polling modes.
+- Received events: number delivered to that transport in the current live measurement session.
+- Response bytes: estimated size of JSON response payloads on the client; excludes HTTP headers, WebSocket frames, TLS records and handshakes. This is not total network traffic.
+- Last delivery delay: client time − server event timestamp. Clock synchronization and page reload/history replay can distort it; a replayed event's age must not be interpreted as real-time transport latency.
+- Current poll interval: meaningful only for Adaptive Polling. A dash for WebSockets and Long Polling is correct because neither has a fixed client polling interval.
+For a fair quantitative comparison, publish multiple demo events while all three transports are already connected, repeat the experiment and compare the counters. Use Chrome DevTools → Network (WS and Fetch/XHR) to inspect actual request counts and HTTP overhead. For resource usage, observe server CPU/memory and connections under the same test duration; do not infer measured resource savings from payload counters alone. Save measured results or screenshots for the defense rather than inventing benchmark values.
+Manual verification performed
+- All three transport panels reached Connected and received the same manually published event.
+- A screenshot showed a live event delivered through WebSockets, Long Polling and Adaptive Polling (different request counts and delivery times, as expected).
+- Product creation, editing and deletion generated catalog events.
+- The Server event history panel showed two demo events and subsequent product update/deletion events after navigation away and back to the Connectivity page.
+- The client now automatically starts all three modes when the comparison page loads. Connections are intentionally stopped on navigation, then restarted on return.
+- A canceled long-poll HTTP request is treated as expected browser navigation rather than an application failure.
+Historical events are displayed separately from live transport counters so old events are not misrepresented as live delivery measurements. Server history is in-memory and is cleared on application restart. There is no permanent audit log.
+Verification remaining before final submission
+- Record a reproducible comparison of all three modes with multiple new events and DevTools Network evidence of request and header overhead.
+- Inspect CPU and memory usage or state explicitly that resource efficiency is a qualitative comparison rather than a measured benchmark.
+- Run the current UnitTests, IntegrationTests and QA2 E2E suite (the previously documented results predate C10). Add C10-specific automated tests if time allows.
+- Review the final C10 code and successful CI run before declaring a fully regression-tested version.
+C10 status: implemented and manually demonstrated; quantitative resource/network-overhead evidence and final regression testing remain to be confirmed. Potential value: 5 points.
 Postman Collection — QA1 + B1 + B9
 File:
 
@@ -1485,6 +1574,7 @@ Stores Map	/StoresMap
 Statistics	/Statistics
 Currency Rates	/CurrencyRates
 Notes Editor	/NotesEditor
+Connectivity comparison	/Connectivity
 
 
 Currency Rates requires external API availability.
@@ -1539,7 +1629,7 @@ A total of 277 C# tests passed in the latest observed local run.
 
 The local QA2 connection failures should be resolved by running the tests while the application is accessible.
 
-No new automated C12, C13, C14, C15, B4, or F3 test count is claimed.
+No new automated C12, C13, C14, C15, B4, F3, or C10 test count is claimed.
 Code Coverage
 Collect coverage:
 
@@ -1563,7 +1653,7 @@ An earlier pre-C5 coverage report showed:
 - Line coverage: 76.1%.
 - Branch coverage: 77.7%.
 - Application layer line coverage: 100%.
-  These are historical measurements, not current F3 coverage results.
+  These are historical measurements, not current C10 coverage results.
 Security Notes
 - Never commit database credentials or secrets.
 - Keep .env excluded from Git.
@@ -1602,3 +1692,4 @@ Implemented and Verified
 - C15 — Browser File API import and JSON/Markdown export.
 - B4 — Lucene.NET Full-Text Product Search API.
 - F3 — Drag-and-Drop Notes Block Reordering.
+- C10 — Connectivity comparison (manual functional checks passed; final quantitative evaluation pending).

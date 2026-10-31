@@ -1,0 +1,48 @@
+﻿@{
+    ViewData["Title"] = "Connectivity comparison (C10)";
+}
+
+<link rel="stylesheet" href="~/css/connectivity.css" asp-append-version="true" />
+<div class="container py-4" id="c10Root">
+    <h1>C10 — Connectivity comparison</h1>
+    <p class="text-muted">Compare WebSockets, Long Polling and Adaptive Polling while observing product changes and manual demo events.</p>
+    <form id="c10DemoForm" method="post" class="mb-3">
+        @Html.AntiForgeryToken()
+        <button type="submit" class="btn btn-primary">Publish demo event</button>
+        <span class="ms-2 text-muted" id="c10PublishStatus" aria-live="polite"></span>
+    </form>
+    <div class="row g-3">
+        @foreach (var mode in new[] { ("ws", "WebSockets"), ("long", "Long Polling"), ("adaptive", "Adaptive Polling") })
+        {
+            <div class="col-lg-4">
+                <section class="card h-100 c10-panel" data-mode="@mode.Item1">
+                    <div class="card-body">
+                        <h2 class="h5">@mode.Item2</h2>
+                        <p class="c10-status" aria-live="polite">Stopped</p>
+                        <div class="mb-3">
+                            <button type="button" class="btn btn-success btn-sm c10-start">Start</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm c10-stop" disabled>Stop</button>
+                        </div>
+                        <dl class="row small mb-2">
+                            <dt class="col-7">Requests / connections</dt>
+                            <dd class="col-5 c10-requests">0</dd>
+                            <dt class="col-7">Received events</dt>
+                            <dd class="col-5 c10-events">0</dd>
+                            <dt class="col-7">Response bytes*</dt>
+                            <dd class="col-5 c10-bytes">0</dd>
+                            <dt class="col-7">Last delivery delay</dt>
+                            <dd class="col-5 c10-delay">—</dd>
+                            <dt class="col-7">Current poll interval</dt>
+                            <dd class="col-5 c10-interval">—</dd>
+                        </dl>
+                        <ol class="c10-feed small" aria-label="Received events"></ol>
+                    </div>
+                </section>
+            </div>
+        }
+    </div>
+    <p class="small text-muted mt-3">*Response bytes measure JSON payload sizes on the client, not full network traffic (headers, framing, TLS and handshakes are excluded). Delivery delay uses the event server timestamp and the client clock; time synchronization affects its accuracy. Adaptive polling increases the interval after empty responses (0.5–5 seconds) and resets it when events arrive. Stop and start all three modes to compare.</p>
+</div>
+@section Scripts {
+    <script src="~/js/connectivity.js" asp-append-version="true"></script>
+}

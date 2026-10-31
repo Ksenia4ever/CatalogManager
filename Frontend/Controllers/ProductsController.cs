@@ -1,5 +1,6 @@
 ﻿
 using CatalogManager.Application.Interfaces;
+using CatalogManager.Services;
 using CatalogManager.Domain.Entities;
 using CatalogManager.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -12,15 +13,18 @@ public class ProductsController : Controller
     private readonly IProductService _productService;
     private readonly ICategoryService _categoryService;
     private readonly IStoreService _storeService;
+    private readonly ConnectivityEventStore? _connectivity;
 
     public ProductsController(
         IProductService productService,
         ICategoryService categoryService,
-        IStoreService storeService)
+        IStoreService storeService,
+        ConnectivityEventStore? connectivity = null)
     {
         _productService = productService;
         _categoryService = categoryService;
         _storeService = storeService;
+        _connectivity = connectivity;
     }
 
     // GET: /Products
@@ -66,6 +70,7 @@ public class ProductsController : Controller
             var product = MapToProduct(model);
 
             await _productService.CreateAsync(product);
+            _connectivity?.Publish("product-created", $"Created product #{product.Id}: {product.Name}");
 
             return RedirectToAction(nameof(Index));
         }
@@ -124,6 +129,8 @@ public class ProductsController : Controller
             if (!updated)
                 return NotFound();
 
+            _connectivity?.Publish("product-updated", $"Updated product #{product.Id}: {product.Name}");
+
             return RedirectToAction(nameof(Index));
         }
         catch (ArgumentException ex)
@@ -154,6 +161,8 @@ public class ProductsController : Controller
 
         if (!deleted)
             return NotFound();
+
+        _connectivity?.Publish("product-deleted", $"Deleted product #{id}");
 
         return RedirectToAction(nameof(Index));
     }

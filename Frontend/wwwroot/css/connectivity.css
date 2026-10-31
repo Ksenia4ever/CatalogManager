@@ -1,0 +1,27 @@
+﻿.c10-panel .card-body {
+    display: flex;
+    flex-direction: column;
+}
+
+.c10-feed {
+    overflow: auto;
+    min-height: 120px;
+    max-height: 245px;
+    padding-left: 1.4rem;
+    margin-top: auto;
+    border-top: 1px solid #ddd;
+    padding-top: .7rem;
+}
+
+    .c10-feed li {
+        margin-bottom: .4rem;
+        overflow-wrap: anywhere;
+    }
+
+.c10-status {
+    font-weight: 600;
+}
+
+.c10-panel[data-running="true"] {
+    border-color: #198754;
+}

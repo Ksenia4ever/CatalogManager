@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.OutputCaching;
+using CatalogManager.Services;
 using CatalogManager.DTOs.Pagination;
 using Microsoft.AspNetCore.Http;
 using CatalogManager.Application.Interfaces;
@@ -14,11 +15,14 @@ public class ProductsApiController : ControllerBase
 {
     private readonly IProductService _service;
     private readonly IOutputCacheStore? _cache;
+    private readonly ConnectivityEventStore? _connectivity;
 
-    public ProductsApiController(IProductService service, IOutputCacheStore? cache = null)
+    public ProductsApiController(IProductService service, IOutputCacheStore? cache = null,
+        ConnectivityEventStore? connectivity = null)
     {
         _service = service;
         _cache = cache;
+        _connectivity = connectivity;
     }
 
     // GET api/products?skip=0&limit=10 (B1)
@@ -99,6 +103,7 @@ public class ProductsApiController : ControllerBase
         {
             await _service.CreateAsync(product);
             await EvictCacheAsync();
+            _connectivity?.Publish("product-created", $"Created product #{product.Id}: {product.Name}");
         }
         catch (ArgumentException ex)
         {
@@ -135,6 +140,7 @@ public class ProductsApiController : ControllerBase
                 return NotFound();
 
             await EvictCacheAsync();
+            _connectivity?.Publish("product-updated", $"Updated product #{id}: {product.Name}");
         }
         catch (ArgumentException ex)
         {
@@ -159,6 +165,7 @@ public class ProductsApiController : ControllerBase
             return NotFound();
 
         await EvictCacheAsync();
+        _connectivity?.Publish("product-deleted", $"Deleted product #{id}: {product.Name}");
         return NoContent();
     }
 

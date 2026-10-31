@@ -57,6 +57,8 @@ builder.Services.AddHttpClient<
     });
 
 builder.Services.AddSingleton<SharedNotesStore>();
+// C10: in-memory event stream shared by all HTTP and WebSocket clients
+builder.Services.AddSingleton<ConnectivityEventStore>();
 builder.Services.AddSignalR();
 
 var app = builder.Build();
@@ -69,6 +71,9 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
+
+// C10: enable WebSocket upgrade handling
+app.UseWebSockets();
 
 // B9: Enable Output Cache middleware
 app.UseOutputCache();
