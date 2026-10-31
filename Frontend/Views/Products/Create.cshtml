@@ -1,5 +1,4 @@
-﻿
-@model CatalogManager.Models.ProductFormViewModel
+﻿@model CatalogManager.Models.ProductFormViewModel
 
 @{
     ViewData["Title"] = "Create Product";
@@ -38,7 +37,7 @@
     <div class="mb-3">
         <label asp-for="CategoryId" class="form-label">Category</label>
         <select asp-for="CategoryId" asp-items="Model.Categories"
-                class="form-select">
+                class="form-select ajax-select">
             <option value="0">-- Select Category --</option>
         </select>
         <span asp-validation-for="CategoryId" class="text-danger"></span>
@@ -47,7 +46,7 @@
     <div class="mb-3">
         <label asp-for="StoreId" class="form-label">Store</label>
         <select asp-for="StoreId" asp-items="Model.Stores"
-                class="form-select">
+                class="form-select ajax-select">
             <option value="0">-- Select Store --</option>
         </select>
         <span asp-validation-for="StoreId" class="text-danger"></span>
@@ -58,5 +57,9 @@
 </form>
 
 @section Scripts {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" />
+    <link rel="stylesheet" href="~/css/product-autocomplete.css" asp-append-version="true" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+    <script src="~/js/product-autocomplete.js" asp-append-version="true"></script>
     <partial name="_ValidationScriptsPartial" />
 }
