@@ -155,11 +155,116 @@
             return `<p>${lines.map(inline).join('<br>')}</p>`;
         }).join('') || '<p class="text-muted">No content to preview.</p>';
     }
+    // F3: Native HTML Drag and Drop for block ordering.
+    // A dedicated handle avoids interfering with selecting or editing text.
+    let draggedBlockId = null;
+    let dropTargetId = null;
+    let dropAfter = false;
+
+    const f3Style = document.createElement('style');
+    f3Style.textContent = `
+        .notes-drag-handle { cursor: grab; user-select: none; touch-action: none; }
+        .notes-drag-handle:active { cursor: grabbing; }
+        .notes-f3-dragging { opacity: .45; }
+        .notes-f3-before { outline: 3px solid #0d6efd; outline-offset: 1px; }
+        .notes-f3-after { box-shadow: 0 4px 0 0 #0d6efd; }
+        @media (prefers-reduced-motion: no-preference) {
+            .notes-f3-before, .notes-f3-after { transition: outline .12s, box-shadow .12s; }
+        }
+    `;
+    document.head.appendChild(f3Style);
+
+    function clearDragMarkers() {
+        container.querySelectorAll('.notes-f3-dragging, .notes-f3-before, .notes-f3-after')
+            .forEach(el => el.classList.remove('notes-f3-dragging', 'notes-f3-before', 'notes-f3-after'));
+        dropTargetId = null;
+    }
+
+    function resetDrag() {
+        draggedBlockId = null;
+        clearDragMarkers();
+    }
+
+    function positionDrop(event, node) {
+        if (!draggedBlockId || node.dataset.blockId === draggedBlockId) return false;
+        const rect = node.getBoundingClientRect();
+        dropAfter = event.clientY >= rect.top + rect.height / 2;
+        clearDragMarkers();
+        dropTargetId = node.dataset.blockId;
+        node.classList.add(dropAfter ? 'notes-f3-after' : 'notes-f3-before');
+        const source = Array.from(container.children)
+            .find(el => el.dataset.blockId === draggedBlockId);
+        source?.classList.add('notes-f3-dragging');
+        return true;
+    }
+
+    container.addEventListener('dragstart', event => {
+        const handle = event.target.closest?.('.notes-drag-handle');
+        if (!handle) {
+            event.preventDefault();
+            return;
+        }
+        const node = handle.closest('.notes-block');
+        if (!node) return;
+        draggedBlockId = node.dataset.blockId;
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', draggedBlockId);
+        node.classList.add('notes-f3-dragging');
+    });
+    container.addEventListener('dragover', event => {
+        if (!draggedBlockId) return;
+        const node = event.target.closest?.('.notes-block');
+        if (!node || !positionDrop(event, node)) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+    });
+    container.addEventListener('drop', event => {
+        if (!draggedBlockId) return;
+        event.preventDefault();
+        const targetNode = event.target.closest?.('.notes-block');
+        if (!targetNode || targetNode.dataset.blockId === draggedBlockId) {
+            resetDrag();
+            return;
+        }
+        positionDrop(event, targetNode);
+        const sourceIndex = blocks.findIndex(b => b.id === draggedBlockId);
+        if (sourceIndex < 0 || !dropTargetId) {
+            resetDrag();
+            return;
+        }
+        const targetId = dropTargetId;
+        const after = dropAfter;
+        const [moved] = blocks.splice(sourceIndex, 1);
+        const targetIndex = blocks.findIndex(b => b.id === targetId);
+        if (targetIndex < 0) {
+            blocks.splice(sourceIndex, 0, moved);
+            resetDrag();
+            return;
+        }
+        const destination = targetIndex + (after ? 1 : 0);
+        blocks.splice(destination, 0, moved);
+        resetDrag();
+        if (destination !== sourceIndex) {
+            render();
+            queueSave();
+        }
+    });
+    container.addEventListener('dragend', resetDrag);
+    // Preserve normal focus and text selection in textarea/select controls.
+
     function render() {
         container.replaceChildren();
         blocks.forEach((b, index) => {
             const node = template.content.firstElementChild.cloneNode(true);
             node.dataset.blockId = b.id;
+            const handle = document.createElement('button');
+            handle.type = 'button';
+            handle.className = 'notes-drag-handle btn btn-outline-secondary btn-sm me-2 mb-2';
+            handle.textContent = '☰ Drag';
+            handle.draggable = true;
+            handle.title = 'Drag to reorder this block';
+            handle.setAttribute('aria-label', `Drag block ${index + 1} to reorder`);
+            (node.querySelector('.card-body') || node).prepend(handle);
             node.querySelector('.notes-block-type').value = b.type;
             node.querySelector('.notes-block-text').value = b.text;
             node.querySelector('.notes-move-up').disabled = index === 0;
