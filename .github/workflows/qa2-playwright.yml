@@ -45,6 +45,9 @@ jobs:
           dotnet tool install --global dotnet-ef --version "10.0.*"
           echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
 
+      - name: Restore NuGet dependencies for migrations
+        run: dotnet restore CatalogManager.slnx
+        
       - name: Apply database migrations
         env:
           ConnectionStrings__DefaultConnection: "Host=localhost;Port=55432;Database=CatalogManagerDb;Username=postgres;Password=QA2_CI_Local_Only_2026"
