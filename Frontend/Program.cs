@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.OutputCaching;
+using CatalogManager.Services;
 using CatalogManager.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using CatalogManager.Application.Interfaces;
@@ -42,6 +43,14 @@ builder.Services.AddScoped<IStoreService, StoreService>();
 // Products
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
+
+builder.Services.AddHttpClient<
+    ICurrencyRatesService,
+    PrivatBankCurrencyRatesService>(client =>
+    {
+        client.BaseAddress = new Uri("https://api.privatbank.ua/");
+        client.Timeout = TimeSpan.FromSeconds(10);
+    });
 
 var app = builder.Build();
 

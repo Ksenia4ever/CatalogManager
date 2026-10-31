@@ -1,0 +1,46 @@
+﻿@{
+    ViewData["Title"] = "Currency Rates";
+}
+
+<h1 class="mb-3">Currency Rates — PrivatBank</h1>
+<p class="text-muted">
+    Current cash exchange rates from the public PrivatBank API. UAH is the base currency.
+    The rates are indicative and may change.
+</p>
+
+<div class="d-flex gap-2 mb-3">
+    <button type="button" id="refreshRates" class="btn btn-primary">Refresh rates</button>
+    <span id="ratesStatus" role="status" aria-live="polite" class="align-self-center">Loading...</span>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead><tr><th>Currency</th><th>Base</th><th>Bank buys (UAH)</th><th>Bank sells (UAH)</th></tr></thead>
+        <tbody id="ratesBody"><tr><td colspan="4">Loading exchange rates...</td></tr></tbody>
+    </table>
+</div>
+
+<div class="card mt-4">
+    <div class="card-body">
+        <h2 class="h5">Approximate currency conversion</h2>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label" for="uahAmount">Amount in UAH</label>
+                <input class="form-control" id="uahAmount" type="number" min="0" step="0.01" value="1000" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" for="currencySelect">Target currency</label>
+                <select class="form-select" id="currencySelect" disabled></select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" for="convertedAmount">Estimated amount</label>
+                <output class="form-control" id="convertedAmount">—</output>
+            </div>
+        </div>
+        <small class="text-muted">Calculation uses the bank's sale rate (UAH per unit of foreign currency). This is not a transaction quote.</small>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/currency-rates.js" asp-append-version="true"></script>
+}

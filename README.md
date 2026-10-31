@@ -1,6 +1,7 @@
+
 # CatalogManager
 
-CatalogManager is a layered **ASP.NET Core MVC + REST API** application for managing a product catalog. It supports categories, stores, and products, persists data in PostgreSQL using Entity Framework Core, and includes automated C# tests, Postman API testing, Playwright browser-based E2E testing, and GitHub Actions automation.
+CatalogManager is a layered **ASP.NET Core MVC + REST API** application for managing a product catalog. It supports categories, stores, and products, persists data in PostgreSQL using Entity Framework Core, and includes automated C# tests, Postman API testing, Playwright browser-based E2E testing, GitHub Actions automation, AJAX autocomplete, data visualization, and integration with the PrivatBank currency exchange API.
 
 The project was developed for the **Web Technologies** coursework.
 
@@ -16,8 +17,9 @@ The project was developed for the **Web Technologies** coursework.
 - **C6 — Bootstrap Landing Page:** responsive product catalog and individual product landing pages.
 - **C7 — SEO Optimization:** product-specific metadata, canonical URLs, Open Graph tags, robots.txt, and Lighthouse auditing.
 - **F1 — Data Visualization:** statistical dashboard using Chart.js and PostgreSQL data.
-- **QA2 — End-to-End Testing:** automated Chromium browser tests with Playwright, xUnit, and GitHub Actions.
-- **F2 — AJAX Autocomplete:** server-side category and store autocomplete in product forms using Select2, jQuery, AJAX, and ASP.NET Core.
+- **QA2 — End-to-End Testing:** automated Chromium browser tests using Playwright, xUnit, Docker, and GitHub Actions.
+- **F2 — AJAX Autocomplete:** server-side Category and Store autocomplete in product forms using Select2, jQuery, AJAX, and ASP.NET Core.
+- **B2 — External API Integration:** real-time currency exchange information from the public PrivatBank API, including a currency converter and automated service tests.
 
 ---
 
@@ -38,6 +40,8 @@ The project was developed for the **Web Technologies** coursework.
 - **SEO:** metadata, canonical URLs, Open Graph, and robots.txt.
 - **Statistics:** three Chart.js charts with asynchronous refresh.
 - **Autocomplete:** dynamically search and select categories and stores when creating or editing products.
+- **Currency Rates:** fetch current exchange rates from the PrivatBank API.
+- **Currency Converter:** convert an amount in UAH to a selected foreign currency using the bank's selling rate.
 - **Automated testing:** xUnit, Moq, HTTP integration tests, Postman, and Playwright.
 - **GitHub Actions:** automated QA2 execution against Docker containers.
 
@@ -54,6 +58,10 @@ The project was developed for the **Web Technologies** coursework.
 - AJAX and JSON
 - Chart.js
 - OpenStreetMap and Leaflet.js
+- PrivatBank Public API
+- HttpClient and IHttpClientFactory
+- ASP.NET Core Dependency Injection
+- System.Text.Json
 - ASP.NET Core Output Caching
 - Docker and Docker Compose
 - xUnit and Moq
@@ -82,7 +90,11 @@ CatalogManager/
 │   │   ├── ProductsController.cs
 │   │   ├── ProductAutocompleteController.cs
 │   │   ├── StoresMapController.cs
-│   │   └── StatisticsController.cs
+│   │   ├── StatisticsController.cs
+│   │   └── CurrencyRatesController.cs
+│   ├── Services/
+│   │   ├── ICurrencyRatesService.cs
+│   │   └── PrivatBankCurrencyRatesService.cs
 │   ├── ApiControllers/
 │   ├── Models/
 │   ├── DTOs/
@@ -94,13 +106,16 @@ CatalogManager/
 │   │   │   └── Edit.cshtml
 │   │   ├── StoresMap/
 │   │   ├── Statistics/
+│   │   ├── CurrencyRates/
+│   │   │   └── Index.cshtml
 │   │   └── Shared/
 │   │       └── _Layout.cshtml
 │   ├── wwwroot/
 │   │   ├── js/
 │   │   │   ├── stores-map.js
 │   │   │   ├── statistics.js
-│   │   │   └── product-autocomplete.js
+│   │   │   ├── product-autocomplete.js
+│   │   │   └── currency-rates.js
 │   │   ├── css/
 │   │   │   ├── stores-map.css
 │   │   │   ├── product-landing.css
@@ -115,7 +130,8 @@ CatalogManager/
 ├── IntegrationTests/
 │   └── Tests/
 │       ├── StatisticsIntegrationTests.cs
-│       └── ProductAutocompleteIntegrationTests.cs
+│       ├── ProductAutocompleteIntegrationTests.cs
+│       └── PrivatBankCurrencyRatesServiceTests.cs
 ├── E2ETests/
 │   ├── CatalogManager.E2ETests.csproj
 │   └── CatalogManagerBrowserTests.cs
@@ -150,6 +166,10 @@ HTTP Client → API Controller → Application Service → Repository → EF Cor
 
 Select2 → AJAX GET → ProductAutocompleteController → EF Core → PostgreSQL → JSON → Select2
 
+**B2 currency exchange requests:**
+
+Browser → CurrencyRatesController → ICurrencyRatesService → HttpClient → PrivatBank API → JSON → Browser
+
 Each Product belongs to one Category and one Store.
 
 Categories and stores may be associated with multiple products. Foreign-key constraints protect referenced records from deletion.
@@ -161,6 +181,8 @@ MVC uses dedicated form ViewModels:
 - `ProductFormViewModel`
 
 REST API endpoints use separate request and response DTOs.
+
+Currency exchange rates are retrieved from an external provider and do not require additional PostgreSQL tables.
 
 ---
 
@@ -772,7 +794,7 @@ dotnet test E2ETests/CatalogManager.E2ETests.csproj
 
 Verified on 30 October 2026.
 
-Later local Test Explorer executions returned `ERR_CONNECTION_REFUSED` when Playwright could not connect to the expected IIS Express URL. This is an application availability issue, rather than evidence that individual test assertions failed.
+Later local Test Explorer executions returned `ERR_CONNECTION_REFUSED` when Playwright could not connect to the expected IIS Express URL. This is an application availability issue rather than evidence that individual test assertions failed.
 
 The Docker-based CI workflow provides an independently verified execution environment.
 
@@ -805,7 +827,7 @@ Run these tests only against development or disposable test databases.
 
 QA2 is integrated with GitHub Actions.
 
-The workflow automatically builds and runs the CatalogManager application in Docker, prepares PostgreSQL, installs Chromium, and executes Playwright browser tests.
+The workflow automatically builds and runs CatalogManager in Docker, prepares PostgreSQL, installs Chromium, and executes Playwright browser tests.
 
 This allows the E2E test suite to run independently of a developer's Visual Studio or IIS Express installation.
 
@@ -831,7 +853,7 @@ The workflow is configured for:
 5. Install the Entity Framework Core CLI.
 6. Restore NuGet dependencies.
 7. Apply existing PostgreSQL migrations.
-8. Wait until the CatalogManager application becomes available.
+8. Wait until CatalogManager becomes available.
 9. Restore and build the E2E test project.
 10. Install Playwright Chromium and required dependencies.
 11. Run the seven QA2 tests.
@@ -941,7 +963,7 @@ Instead of opening a long Category dropdown, the user enters:
 
 The autocomplete selector sends a request to the backend.
 
-The server searches for matching category names and returns the relevant records.
+The server searches for matching category names and returns relevant records.
 
 The user selects the correct category.
 
@@ -1061,13 +1083,280 @@ The previous QA2 suite remains available and is executed independently through G
 
 ### F2 Conclusion
 
-F2 improves the usability of the CatalogManager product forms.
+F2 improves the usability of CatalogManager product forms.
 
 Users can search for categories and stores using AJAX autocomplete instead of manually navigating long dropdown lists.
 
 The implementation reuses the existing MVC application and PostgreSQL data model.
 
 **F2 result: implemented, browser-verified, and six new integration tests passed.**
+
+---
+
+## B2 — External API Integration (PrivatBank)
+
+### Overview
+
+B2 integrates CatalogManager with the public PrivatBank currency exchange API.
+
+Unlike the C8 map integration, which uses OpenStreetMap, B2 retrieves financial information from a different external service.
+
+The implementation demonstrates server-to-server HTTP requests, JSON parsing, Dependency Injection, and external API error handling.
+
+### External API
+
+Provider:
+
+**PrivatBank**
+
+Base address:
+
+`https://api.privatbank.ua/`
+
+Endpoint:
+
+```http
+GET /p24api/pubinfo?json&exchange&coursid=5
+```
+
+The endpoint returns currency exchange information in JSON format.
+
+The current implementation retrieves data from the bank's public API without requiring user authentication or an API key.
+
+### Currency Rates Page
+
+MVC page:
+
+`/CurrencyRates`
+
+Alternative MVC route:
+
+`/CurrencyRates/Index`
+
+The page is accessible from the CatalogManager navigation menu.
+
+### Implemented Features
+
+- Connection to PrivatBank using `HttpClient`.
+- HTTP GET request to the external API.
+- JSON response parsing using `System.Text.Json`.
+- Currency exchange data presented in a table.
+- Currency code and base currency information.
+- Bank purchase rates in UAH.
+- Bank selling rates in UAH.
+- Refresh button for requesting updated rates.
+- Currency conversion from UAH to a selected foreign currency.
+- Asynchronous requests.
+- Error handling for invalid HTTP responses and malformed JSON.
+- Automated tests using simulated HTTP responses.
+
+### Supported Currencies
+
+During browser verification, the API returned the following currencies:
+
+- EUR / UAH.
+- USD / UAH.
+
+The displayed set depends on the current API response.
+
+### Currency Rates Table
+
+The page includes the following columns:
+
+| Column | Description |
+|---|---|
+| Currency | Foreign currency code |
+| Base | Base currency, usually UAH |
+| Bank buys (UAH) | Amount the bank pays for one unit of foreign currency |
+| Bank sells (UAH) | Amount the bank charges for one unit of foreign currency |
+
+The values are retrieved from PrivatBank and may change.
+
+### Approximate Currency Converter
+
+The conversion section allows users to:
+
+1. Enter an amount in UAH.
+2. Select an available currency.
+3. View the approximate converted amount.
+
+The calculation uses the bank's selling rate.
+
+### Conversion Formula
+
+```text
+Foreign currency amount = UAH amount / Bank selling rate
+```
+
+For example, using the EUR selling rate of 51.30 UAH:
+
+```text
+4000 UAH / 51.30 = 77.97 EUR
+```
+
+This value matches the verified browser calculation.
+
+The converter provides an estimate and is not a real bank transaction or guaranteed exchange quotation.
+
+### B2 Architecture
+
+```text
+Google Chrome
+     |
+     v
+Currency Rates Razor View
+     |
+     v
+CurrencyRatesController
+     |
+     v
+ICurrencyRatesService
+     |
+     v
+PrivatBankCurrencyRatesService
+     |
+     v
+HttpClient
+     |
+     | HTTPS GET
+     v
+PrivatBank Public API
+     |
+     | JSON response
+     v
+System.Text.Json
+     |
+     v
+CurrencyRate objects
+     |
+     v
+Controller / JSON / Browser
+```
+
+### Dependency Injection
+
+The service is registered in `Frontend/Program.cs` using a typed `HttpClient`:
+
+```csharp
+builder.Services.AddHttpClient<
+    ICurrencyRatesService,
+    PrivatBankCurrencyRatesService>(client =>
+{
+    client.BaseAddress = new Uri("https://api.privatbank.ua/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+```
+
+`BaseAddress` specifies the external API host.
+
+The request path is relative to this address:
+
+`p24api/pubinfo?json&exchange&coursid=5`
+
+The HTTP timeout is set to 10 seconds.
+
+This configuration allows ASP.NET Core to inject the service into `CurrencyRatesController`.
+
+### Implementation Files
+
+| File | Responsibility |
+|---|---|
+| `Frontend/Services/ICurrencyRatesService.cs` | Service contract |
+| `Frontend/Services/PrivatBankCurrencyRatesService.cs` | External API requests and JSON parsing |
+| `Frontend/Controllers/CurrencyRatesController.cs` | MVC controller |
+| `Frontend/Views/CurrencyRates/Index.cshtml` | Currency rates interface and converter |
+| `Frontend/wwwroot/js/currency-rates.js` | Refresh and conversion behavior |
+| `Frontend/Program.cs` | HttpClient configuration and DI registration |
+| `Frontend/Views/Shared/_Layout.cshtml` | Currency Rates navigation link |
+| `IntegrationTests/Tests/PrivatBankCurrencyRatesServiceTests.cs` | Automated external API service tests |
+
+### B2 Automated Tests
+
+The service tests use controlled HTTP responses instead of depending on the live PrivatBank API.
+
+This makes them repeatable even if the external provider is temporarily unavailable.
+
+Four tests were implemented:
+
+| Test | Purpose |
+|---|---|
+| `ValidResponse_ParsesCurrencyRates` | Verify valid JSON parsing |
+| `ServerError_ThrowsHttpRequestException` | Verify handling of HTTP server errors |
+| `NoValidRates_ThrowsJsonException` | Verify handling of responses with no valid rates |
+| `MalformedJson_ThrowsJsonException` | Verify handling of invalid JSON |
+
+The malformed JSON test uses `Assert.ThrowsAnyAsync<JsonException>()`, allowing derived JSON exception types such as `JsonReaderException`.
+
+### Verified B2 Test Results
+
+| Metric | Result |
+|---|---:|
+| Automated B2 service tests | 4 |
+| Passed | 4 |
+| Failed | 0 |
+| Skipped | 0 |
+
+**All four B2 tests passed in Visual Studio Test Explorer.**
+
+### Browser Verification
+
+B2 was also tested manually in Google Chrome using IIS Express.
+
+Verified address:
+
+`https://localhost:44361/CurrencyRates/Index`
+
+The application successfully displayed:
+
+- Currency Rates — PrivatBank page.
+- EUR/UAH exchange rates.
+- USD/UAH exchange rates.
+- Successful data loading message.
+- Refresh rates button.
+- Approximate currency conversion section.
+
+A test input of **4000 UAH** with **EUR** selected produced an estimated result of **77.97 EUR**, using the displayed selling rate.
+
+These values were observed during testing and are not fixed exchange rates.
+
+### Error Handling
+
+The service checks HTTP response status codes before parsing the result.
+
+If the external API returns an unsuccessful HTTP status, an HTTP exception is raised.
+
+If the API returns malformed or unsuitable JSON, JSON parsing or validation raises an exception.
+
+The UI should handle temporary provider failures rather than assume that external data is always available.
+
+### Database Changes
+
+B2 does not introduce new PostgreSQL tables.
+
+Existing entities, repositories, CRUD controllers, and Entity Framework Core migrations remain unchanged.
+
+The exchange rates are loaded from the external API rather than stored as permanent database records.
+
+### Limitations
+
+- Requires an internet connection to the external API.
+- Depends on the availability of the PrivatBank service.
+- Available currencies depend on the provider's response.
+- Exchange rates may change.
+- Currency conversion is indicative, not a financial transaction.
+- A bank may apply additional rules or fees not represented in the converter.
+- Production systems may require additional caching, retry policies, monitoring, and provider-specific error handling.
+
+### B2 Conclusion
+
+B2 extends CatalogManager with a second external API integration.
+
+The project now demonstrates:
+
+- **C8:** integration with OpenStreetMap for store visualization.
+- **B2:** integration with PrivatBank for currency exchange information.
+
+**B2 result: implemented, browser-verified, and four service tests passed.**
 
 ---
 
@@ -1144,6 +1433,20 @@ dotnet run --project Frontend
 
 The URL depends on the selected development profile.
 
+### 5. Verify Application Pages
+
+After starting CatalogManager, verify these pages:
+
+| Page | Route |
+|---|---|
+| Products | `/Products` |
+| Product creation | `/Products/Create` |
+| Stores map | `/StoresMap` |
+| Statistics | `/Statistics` |
+| Currency Rates | `/CurrencyRates` |
+
+The Currency Rates page requires internet access to retrieve external API data.
+
 ---
 
 ## Automated Testing
@@ -1214,20 +1517,21 @@ Open:
 
 The workflow automatically prepares Docker, PostgreSQL, the application, Playwright, and Chromium.
 
-### Latest Confirmed Test Results
+### Last Confirmed Test Results
 
 | Test Type | Passed |
 |---|---:|
 | Unit Tests | 208 |
-| Integration Tests | 65 |
+| Integration Tests before B2 | 65 |
+| Additional B2 service tests | 4 |
 | Playwright E2E Tests | 7 |
-| **Total** | **280** |
+| **Total verified test cases** | **284** |
 
-**280 tests passed across the separately verified test suites.**
+**Important:** The 65 integration tests and 208 unit tests were confirmed before B2. All four new B2 service tests passed separately. The seven E2E tests passed in an earlier GitHub Actions run.
 
-- The 273 unit/integration tests passed after implementing F2.
-- The QA2 GitHub Actions workflow completed successfully.
-- Tests were executed in separate environments rather than one single local Test Explorer run.
+The combined figure of **284** represents confirmed test cases across these separate runs, not a newly verified single execution of the entire updated solution.
+
+A full regression run after B2 is recommended before the final coursework defense.
 
 ---
 
@@ -1238,6 +1542,8 @@ Collect C# code coverage:
 ```powershell
 dotnet test CatalogManager.slnx --collect:"XPlat Code Coverage"
 ```
+
+The E2E project requires a running web application, so for reliable coverage collection, unit and integration tests should be run separately from browser tests.
 
 Install ReportGenerator if necessary:
 
@@ -1261,9 +1567,9 @@ The previously reviewed pre-C5 coverage report showed:
 - Branch coverage: 77.7%.
 - Application layer line coverage: 100%.
 
-These are historical measurements and are not claimed as current F2 coverage results.
+These are historical measurements and are not claimed as current B2 coverage results.
 
-QA2's functional scenario coverage is documented separately.
+QA2 functional scenario coverage is documented separately.
 
 ---
 
@@ -1280,6 +1586,8 @@ QA2's functional scenario coverage is documented separately.
 - REST API inputs use DTO validation and business rules.
 - Docker PostgreSQL is bound to localhost.
 - `robots.txt` is not an access-control mechanism.
+- The current PrivatBank API integration does not require an API key.
+- Do not treat third-party currency data as a guaranteed financial quotation.
 - Public deployment would require further security hardening.
 
 ---
@@ -1300,29 +1608,41 @@ QA2's functional scenario coverage is documented separately.
 - **F1 — Data Visualization:** implemented with three Chart.js diagrams.
 - **QA2 — End-to-End Testing:** seven Playwright tests; GitHub Actions workflow successfully executed.
 - **F2 — AJAX Autocomplete:** implemented and browser-verified; six new integration tests passed.
+- **B2 — External API Integration:** PrivatBank currency page and converter implemented; four service tests passed.
 
 ### Latest Testing Summary
 
-- **208** unit tests passed.
-- **65** HTTP integration tests passed.
+- **208** unit tests passed in the last confirmed unit test run.
+- **65** integration tests passed before B2.
+- **4** additional B2 service tests passed.
 - **7** Playwright E2E tests passed through automated GitHub Actions.
-- **280** total passing tests across the confirmed runs.
+- **284** test cases accounted for across separately confirmed runs.
 
 ### Remaining Tasks
 
 - Verify that no local `.env` files are tracked in Git.
 - Independently verify actual B9 Cache HIT using server-side diagnostics.
-- Commit the F2 implementation and updated README.
-- Implement and verify B2.
+- Confirm a complete regression run after the B2 changes.
+- Confirm GitHub Actions success for the latest B2 commit.
 - Prepare a combined F1, QA2, F2, and B2 video defense.
 
 ### Planned Next Stages
 
-- **B2 — External API Integration (2 points):** integrate currency exchange information through an additional external API.
+- **Combined coursework defense:** F1 + QA2 + F2 + B2.
 - **C9 — Analytics Integration (1 point):** deferred optional stage.
 
-After completing B2, prepare a combined defense of four coursework stages:
+### Combined Defense Plan
 
-**F1 + QA2 + F2 + B2**
+The next defense covers four completed coursework stages:
 
-The project is developed incrementally using Git commits, completion tags, automated tests, and GitHub Actions.
+| Stage | Description | Points |
+|---|---|---:|
+| F1 | Data Visualization with Chart.js | 2 |
+| QA2 | End-to-End Testing with Playwright | 3 |
+| F2 | AJAX Autocomplete with Select2 | 4 |
+| B2 | PrivatBank External API Integration | 2 |
+| **Total** | | **11** |
+
+The defense should demonstrate the implementation, relevant code, automated tests, and working browser interfaces.
+
+CatalogManager is developed incrementally using Git commits, completion tags, automated tests, Docker, and GitHub Actions.
