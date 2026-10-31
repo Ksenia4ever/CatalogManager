@@ -51,3 +51,83 @@
         flex: 1 1 100%;
     }
 }
+
+/* C14: visual feedback for remote SignalR updates only. */
+#notesRemoteActivity {
+    border-left: 4px solid #0d6efd;
+    background: #eef6ff;
+    border-radius: .4rem;
+    padding: .75rem 1rem;
+}
+
+    #notesRemoteActivity ul {
+        padding-left: 1.2rem;
+    }
+
+.notes-remote-label {
+    display: inline-block;
+    margin-bottom: .5rem;
+    background: #174ea6;
+    color: white;
+}
+
+.notes-remote-added {
+    border-color: #198754 !important;
+    animation: notesRemoteAppear 1.25s ease-in-out;
+}
+
+.notes-remote-updated {
+    border-color: #e69d00 !important;
+    animation: notesRemoteFlash 1.4s ease-in-out;
+}
+
+.notes-remote-moved {
+    border-color: #6f42c1 !important;
+    animation: notesRemoteMove 1.0s ease-in-out;
+}
+
+.notes-remote-deleted {
+    animation: notesRemoteAppear .5s ease-out;
+}
+
+@keyframes notesRemoteAppear {
+    from {
+        opacity: .25;
+        transform: translateY(-9px);
+        background: #dbf5e7;
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        background: transparent;
+    }
+}
+
+@keyframes notesRemoteFlash {
+    0%, 50% {
+        background: #fff3cd;
+    }
+
+    100% {
+        background: transparent;
+    }
+}
+
+@keyframes notesRemoteMove {
+    from {
+        transform: translateX(14px);
+        background: #eee6ff;
+    }
+
+    to {
+        transform: translateX(0);
+        background: transparent;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .notes-remote-added, .notes-remote-updated, .notes-remote-moved, .notes-remote-deleted {
+        animation: none !important;
+    }
+}
