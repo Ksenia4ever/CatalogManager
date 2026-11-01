@@ -5,7 +5,6 @@
 <link rel="stylesheet" href="~/css/connectivity.css" asp-append-version="true" />
 <div class="container py-4" id="c10Root">
     <h1>C10 — Connectivity comparison</h1>
-    <p class="text-muted">Compare WebSockets, Long Polling and Adaptive Polling while observing product changes and manual demo events.</p>
     <form id="c10DemoForm" method="post" class="mb-3">
         @Html.AntiForgeryToken()
         <button type="submit" class="btn btn-primary">Publish demo event</button>
@@ -41,8 +40,36 @@
             </div>
         }
     </div>
-    <p class="small text-muted mt-3">*Response bytes measure JSON payload sizes on the client, not full network traffic (headers, framing, TLS and handshakes are excluded). Delivery delay uses the event server timestamp and the client clock; time synchronization affects its accuracy. Adaptive polling increases the interval after empty responses (0.5–5 seconds) and resets it when events arrive. Stop and start all three modes to compare.</p>
+
+    <!-- C11: independent SignalR panel. Do not add the c10-panel class: C10 JS controls only three modes. -->
+    <div class="row g-3 mt-1">
+        <div class="col-lg-6">
+            <section class="card h-100 c11-panel" id="c11Panel" data-running="false">
+                <div class="card-body">
+                    <h2 class="h5">C11 — SignalR real-time updates</h2>
+                    <p class="c11-status fw-semibold" aria-live="polite">Stopped</p>
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-success btn-sm c11-start">Start</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm c11-stop" disabled>Stop</button>
+                    </div>
+                    <dl class="row small mb-2">
+                        <dt class="col-7">Connections</dt>
+                        <dd class="col-5 c11-connections">0</dd>
+                        <dt class="col-7">Received live events</dt>
+                        <dd class="col-5 c11-events">0</dd>
+                        <dt class="col-7">JSON payload bytes*</dt>
+                        <dd class="col-5 c11-bytes">0</dd>
+                        <dt class="col-7">Last delivery delay</dt>
+                        <dd class="col-5 c11-delay">—</dd>
+                    </dl>
+                    <ol class="c10-feed c11-feed small" aria-label="SignalR received events"></ol>
+                </div>
+            </section>
+        </div>
+    </div>
 </div>
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@8.0.7/dist/browser/signalr.min.js"></script>
     <script src="~/js/connectivity.js" asp-append-version="true"></script>
+    <script src="~/js/c11-signalr.js" asp-append-version="true"></script>
 }

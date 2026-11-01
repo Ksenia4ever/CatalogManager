@@ -1,5 +1,5 @@
 CatalogManager
-CatalogManager is a layered ASP.NET Core MVC + REST API application for managing a product catalog. It supports categories, stores, and products, persists data in PostgreSQL using Entity Framework Core, and includes interactive maps, pagination, caching, data visualization, AJAX autocomplete, external currency exchange rates, a collaborative block-based notes editor with browser-based file import and export, full-text product search powered by Lucene.NET, drag-and-drop reordering of notes blocks, and a connectivity comparison of WebSockets, Long Polling, and Adaptive Polling.
+CatalogManager is a layered ASP.NET Core MVC + REST API application for managing a product catalog. It supports categories, stores, and products, persists data in PostgreSQL using Entity Framework Core, and includes interactive maps, pagination, caching, data visualization, AJAX autocomplete, external currency exchange rates, a collaborative block-based notes editor with browser-based file import and export, full-text product search powered by Lucene.NET, drag-and-drop reordering of notes blocks, a connectivity comparison of WebSockets, Long Polling, and Adaptive Polling, and real-time SignalR notifications integrated into the same comparison.
 
 The project includes automated unit, integration, Postman API, and Playwright E2E testing, Docker containerization, and GitHub Actions automation.
 
@@ -26,10 +26,11 @@ C15	Browser File API import and export	3
 B4	Lucene.NET full-text product search API	3
 F3	Drag-and-drop notes block reordering	1
 C10	WebSockets, Long Polling, and Adaptive Polling comparison	5
-Total	20 implemented stages	52
+C11	SignalR real-time event delivery inside C10	3
+Total	21 implemented stages	55
 
 
-These are potential coursework points, not an officially awarded grade.
+These are potential coursework points, not an officially awarded grade. The current coursework total is 55 potential points across 21 implemented stages; the C10/C11 changes were manually verified, but the latest full regression test run is not yet confirmed.
 Features
 Catalog Management
 - CRUD operations for categories, stores, and products.
@@ -67,6 +68,7 @@ Infrastructure
 - Document version checks for concurrent editing.
 - On-demand Lucene.NET RAM index rebuilt from the current product catalog for each search request.
 - In-memory C10 event store with asynchronous notifications and bounded history (200 events).
+- Hosted background service that forwards C10 events to connected SignalR clients.
 Testing
 - xUnit and Moq.
 - HTTP integration tests with WebApplicationFactory.
@@ -159,7 +161,8 @@ CatalogManager/
 
 │   ├── Hubs/
 
-│   │   └── NotesHub.cs
+│   │   ├── NotesHub.cs
+│   │   └── ConnectivityHub.cs
 
 │   ├── Services/
 
@@ -168,7 +171,8 @@ CatalogManager/
 │   │   ├── PrivatBankCurrencyRatesService.cs
 
 │   │   ├── SharedNotesStore.cs
-│   │   └── ConnectivityEventStore.cs
+│   │   ├── ConnectivityEventStore.cs
+│   │   └── ConnectivitySignalRForwarder.cs
 
 │   ├── ApiControllers/
 
@@ -213,7 +217,8 @@ CatalogManager/
 │   │   │   ├── currency-rates.js
 
 │   │   │   ├── notes-editor.js
-│   │   │   └── connectivity.js
+│   │   │   ├── connectivity.js
+│   │   │   └── c11-signalr.js
 
 │   │   ├── css/
 
@@ -1522,6 +1527,63 @@ Verification remaining before final submission
 - Run the current UnitTests, IntegrationTests and QA2 E2E suite (the previously documented results predate C10). Add C10-specific automated tests if time allows.
 - Review the final C10 code and successful CI run before declaring a fully regression-tested version.
 C10 status: implemented and manually demonstrated; quantitative resource/network-overhead evidence and final regression testing remain to be confirmed. Potential value: 5 points.
+C11 — Real-Time Event Delivery with SignalR
+Objective and coursework requirement
+C11 (3 points) extends the C10 connectivity example with ASP.NET Core SignalR. Rather than introducing an unrelated demonstration, the existing event source for catalog updates is reused. The page /Connectivity compares four approaches: native WebSockets, Long Polling, Adaptive Polling (C10), and SignalR (C11).
+
+SignalR is a higher-level real-time framework. It negotiates an available transport and may itself use WebSockets; it must not be presented as a fourth fundamentally independent low-level network protocol.
+Implementation and event flow
+Product Create / Edit / Delete (MVC and REST API)    DemoEvent
+                        |                               |
+                        +------------ Publish ----------+
+                                        |
+                                        v
+                              ConnectivityEventStore
+                                        |
+                                        +--> C10 WebSockets / Long Poll / Adaptive Poll
+                                        |
+                                        v
+                         ConnectivitySignalRForwarder
+                                        |
+                                        v
+                               ConnectivityHub
+                                        |
+                           ConnectivityEventReceived
+                                        |
+                                        v
+                         c11-signalr.js -> C11 panel
+- ConnectivityHub exposes GetHistory() to obtain event history from the shared store.
+- ConnectivitySignalRForwarder, registered as a hosted background service, waits for new C10 events and broadcasts ConnectivityEventReceived to SignalR connections.
+- c11-signalr.js establishes a SignalR connection, receives events, and updates its counters and feed. It has Start/Stop controls and supports reconnection as implemented in the client.
+- The fourth card displays connection status, connection count, received live events, approximate JSON payload size, last delivery delay, and event messages.
+- Historical events remain in the separate Server event history panel and are not added to live transport measurements.
+Main files
+File	Responsibility
+Frontend/Hubs/ConnectivityHub.cs	SignalR hub and GetHistory()
+Frontend/Services/ConnectivitySignalRForwarder.cs	Hosted service forwarding events from the shared store
+Frontend/wwwroot/js/c11-signalr.js	SignalR connection, event handling, counters and Start/Stop
+Frontend/Views/Connectivity/Index.cshtml	Fourth SignalR card and client script
+Frontend/Program.cs	Hosted service registration and app.MapHub<ConnectivityHub>("/connectivityHub")
+
+
+C11 reuses ConnectivityEventStore, the existing product CRUD event publishers, and C10 endpoints. No additional PostgreSQL migration is required. The existing SignalR infrastructure from C13 is also reused.
+Manual verification
+The browser screenshots from the C11 implementation show:
+- SignalR panel status: Connected, with one connection.
+- A product edit event: #4 [product-updated] Updated product #19: Milka.
+- 1 received live event, approximately 120 JSON payload bytes, and 4 ms displayed delivery delay in the C11 panel.
+- The same event delivered by all three existing C10 transports.
+- Server history retaining two demo events plus product creation and update events.
+These are individual example observations, not averaged benchmark results. The displayed delay is calculated from the client clock and the server event timestamp; it may be affected by clock differences. Payload bytes exclude SignalR negotiation, network headers, framing and TLS traffic.
+
+The demonstrated test covers actual product updates, not only a simulated demo event. Additional recommended verification: test a fresh product creation and deletion while the Connectivity page remains open in a separate browser tab; verify reconnect and repeat automated regression tests.
+C11 limitations
+- SignalR chooses the transport automatically, so the actual selected transport should be checked in browser DevTools when comparing network behavior.
+- The in-memory event store retains a maximum of 200 events and is cleared when the process restarts.
+- The event history is not a permanent audit log.
+- No dedicated C11 automated test count or new CI success is claimed without verification.
+- Current C11 evidence demonstrates manual functionality; full regression testing and quantitative performance comparison remain separate steps.
+C11 status: implemented and manually demonstrated. Potential coursework value: 3 points.
 Postman Collection — QA1 + B1 + B9
 File:
 
@@ -1629,7 +1691,7 @@ A total of 277 C# tests passed in the latest observed local run.
 
 The local QA2 connection failures should be resolved by running the tests while the application is accessible.
 
-No new automated C12, C13, C14, C15, B4, F3, or C10 test count is claimed.
+No new automated C12, C13, C14, C15, B4, F3, C10 or C11 test count is claimed.
 Code Coverage
 Collect coverage:
 
@@ -1693,3 +1755,4 @@ Implemented and Verified
 - B4 — Lucene.NET Full-Text Product Search API.
 - F3 — Drag-and-Drop Notes Block Reordering.
 - C10 — Connectivity comparison (manual functional checks passed; final quantitative evaluation pending).
+- C11 — SignalR notifications within the C10 comparison (manual product-update event verified; final regression testing pending).

@@ -60,6 +60,8 @@ builder.Services.AddSingleton<SharedNotesStore>();
 // C10: in-memory event stream shared by all HTTP and WebSocket clients
 builder.Services.AddSingleton<ConnectivityEventStore>();
 builder.Services.AddSignalR();
+// C11: forward C10 events through a SignalR hub.
+builder.Services.AddHostedService<ConnectivitySignalRForwarder>();
 
 var app = builder.Build();
 
@@ -91,6 +93,7 @@ app.MapControllerRoute(
     .WithStaticAssets();
 
 app.MapHub<NotesHub>("/notesHub");
+app.MapHub<ConnectivityHub>("/connectivityHub");
 
 app.Run();
 
