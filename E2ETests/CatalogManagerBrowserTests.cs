@@ -58,9 +58,20 @@ public sealed class CatalogManagerBrowserTests
         try
         {
             await OpenAsync(page, "/");
-            await page.Locator("nav").GetByRole(AriaRole.Link, new() { Name = "Products" }).ClickAsync();
-            await page.WaitForURLAsync("**/Products");
-            Assert.Contains("/Products", page.Url);
+            var productsLink = page.Locator("nav")
+                .GetByRole(AriaRole.Link, new() { Name = "Products", Exact = true });
+
+            await Assertions.Expect(productsLink).ToBeVisibleAsync();
+            await productsLink.ClickAsync();
+
+            // Wait for the actual Products navigation, not for NetworkIdle:
+            // background requests and external assets can keep the network busy.
+            await page.WaitForURLAsync("**/Products", new PageWaitForURLOptions
+            {
+                WaitUntil = WaitUntilState.DOMContentLoaded
+            });
+
+            Assert.EndsWith("/Products", new Uri(page.Url).AbsolutePath);
             Assert.True(await page.Locator("body").IsVisibleAsync());
         }
         finally
@@ -68,7 +79,6 @@ public sealed class CatalogManagerBrowserTests
             await CloseBrowserAsync(playwright, browser, context);
         }
     }
-
     [Fact(DisplayName = "QA2-02 Category complete Create → Edit → Delete scenario")]
     public async Task Category_CreateEditDelete_CompleteUserJourney()
     {
@@ -134,7 +144,6 @@ public sealed class CatalogManagerBrowserTests
             await CloseBrowserAsync(playwright, browser, context);
         }
     }
-
     [Fact(DisplayName = "QA2-03 Category required name validation")]
     public async Task Category_EmptyName_RemainsOnForm()
     {
@@ -178,6 +187,7 @@ public sealed class CatalogManagerBrowserTests
             await CloseBrowserAsync(playwright, browser, context);
         }
     }
+
 
     [Fact(DisplayName = "QA2-05 Stores Map opens with search and refresh controls")]
     public async Task StoresMap_Interface_IsAvailable()
