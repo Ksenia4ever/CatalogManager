@@ -1,1758 +1,643 @@
-CatalogManager
-CatalogManager is a layered ASP.NET Core MVC + REST API application for managing a product catalog. It supports categories, stores, and products, persists data in PostgreSQL using Entity Framework Core, and includes interactive maps, pagination, caching, data visualization, AJAX autocomplete, external currency exchange rates, a collaborative block-based notes editor with browser-based file import and export, full-text product search powered by Lucene.NET, drag-and-drop reordering of notes blocks, a connectivity comparison of WebSockets, Long Polling, and Adaptive Polling, and real-time SignalR notifications integrated into the same comparison.
 
-The project includes automated unit, integration, Postman API, and Playwright E2E testing, Docker containerization, and GitHub Actions automation.
+# CatalogManager
 
-Developed for the Web Technologies coursework.
-Completed Coursework Stages
-Stage	Description	Points
-C1	MVC application with CRUD operations	3
-C5	REST API with DTOs and validation	3
-QA1	Automated API testing with Postman	2
-B1	REST API pagination	2
-C8	Interactive stores map with Leaflet	3
-B9	ASP.NET Core Output Caching	3
-C4	Docker containerization	1
-C6	Bootstrap product landing pages	3
-C7	SEO optimization	1
-F1	Data visualization with Chart.js	2
-QA2	Playwright end-to-end testing	3
-F2	AJAX autocomplete with Select2	4
-B2	PrivatBank external API integration	2
-C12	Dynamic notes editor	3
-C13	Cross-browser synchronization with SignalR	2
-C14	Collaborative change visualization	3
-C15	Browser File API import and export	3
-B4	Lucene.NET full-text product search API	3
-F3	Drag-and-drop notes block reordering	1
-C10	WebSockets, Long Polling, and Adaptive Polling comparison	5
-C11	SignalR real-time event delivery inside C10	3
-Total	21 implemented stages	55
+CatalogManager is a coursework web application for managing products, categories, and stores. It combines an ASP.NET Core MVC interface, a REST API, PostgreSQL persistence, and additional modules for search, mapping, statistics, collaborative notes, and real-time updates.
 
+The solution uses C# / .NET 10, ASP.NET Core, Entity Framework Core, Razor Views, JavaScript, and Docker Compose. It includes unit, integration, Postman API, and Playwright end-to-end tests.
 
-These are potential coursework points, not an officially awarded grade. The current coursework total is 55 potential points across 21 implemented stages; the C10/C11 changes were manually verified, but the latest full regression test run is not yet confirmed.
-Features
-Catalog Management
-- CRUD operations for categories, stores, and products.
-- Product-category and product-store relationships.
-- Required-field and business-rule validation.
-- Unique category names.
-- Price and coordinate validation.
-- Prevention of deleting referenced categories and stores.
-- Optional product image URLs.
-Web Interface
-- ASP.NET Core MVC with Razor Views and Bootstrap.
-- Responsive product catalog and individual landing pages.
-- Interactive OpenStreetMap store markers.
-- Chart.js statistics dashboard.
-- AJAX category and store autocomplete.
-- PrivatBank currency rates and approximate conversion.
-- Block-based notes editor.
-- Shared documents synchronized through SignalR.
-- Visual highlighting of changes made in another browser.
-- Recent remote changes history.
-- Import JSON documents through the browser File API.
-- Export shared documents as JSON or Markdown files.
-- Search product names and descriptions through a Lucene.NET-powered full-text search page.
-- Reorder notes blocks by dragging a handle, with automatic saving and cross-browser synchronization.
-- Compare event delivery through native WebSockets, Long Polling, and Adaptive Polling on /Connectivity.
-- Display the last 200 server-side product and demo events while the application is running.
-Infrastructure
-- REST API with CRUD operations.
-- Offset-based pagination.
-- Output caching and invalidation.
-- PostgreSQL persistence through EF Core.
-- Docker Compose support.
-- GitHub Actions automation.
-- Server-side JSON persistence for shared notes.
-- Document version checks for concurrent editing.
-- On-demand Lucene.NET RAM index rebuilt from the current product catalog for each search request.
-- In-memory C10 event store with asynchronous notifications and bounded history (200 events).
-- Hosted background service that forwards C10 events to connected SignalR clients.
-Testing
-- xUnit and Moq.
-- HTTP integration tests with WebApplicationFactory.
-- Postman Collection Runner.
-- Playwright with Chromium.
-- Automated GitHub Actions E2E workflow.
-Technology Stack
-Backend
-- C# / .NET 10
+## 1. Prerequisites
+
+### Required Software
+
+- .NET 10 SDK.
+- Git.
+- PostgreSQL 17 or Docker Desktop with Docker Compose.
+- Chrome, Edge, or another modern browser.
+- Internet access for externally hosted JavaScript libraries, OpenStreetMap, and PrivatBank API.
+
+### Recommended Tools
+
+- Visual Studio with ASP.NET and web development support and .NET 10 compatibility.
+- Postman for REST API testing.
+- Docker Desktop for containerized deployment.
+- PowerShell for running development commands.
+
+### Backend Dependencies
+
+NuGet packages are restored automatically from the project files.
+
+Main dependencies:
+
 - ASP.NET Core MVC and Web API
-- Razor Views
 - Entity Framework Core 10
-- PostgreSQL 17
-- Npgsql
+- Npgsql PostgreSQL provider
+- Lucene.NET 4.8 beta
 - ASP.NET Core SignalR
 - ASP.NET Core Output Caching
-- Lucene.NET 4.8 (Analysis.Common and QueryParser)
-- ASP.NET Core native WebSocket support and asynchronous long-poll endpoints
-- HttpClient and IHttpClientFactory
-- Dependency Injection
-- System.Text.Json
-Frontend
-- HTML5
-- CSS3
-- JavaScript
+- xUnit and Moq
+- Microsoft Playwright
+- Coverlet
+
+### Frontend Libraries
+
 - Bootstrap
 - jQuery
 - Select2
-- AJAX / Fetch API
+- Leaflet
 - Chart.js
-- Leaflet.js
-- SignalR JavaScript client
-- Web Storage API / localStorage
-- DOM manipulation
-- CSS animations and transitions
-- Browser File API, FileReader, Blob, and object URLs
+- SignalR JavaScript Client
+- Fetch API
 - HTML Drag and Drop API
-- Native WebSocket API, Fetch API, AbortController
-External Services
-- OpenStreetMap
-- PrivatBank Public API
-Testing and Development
-- Visual Studio
-- xUnit
-- Moq
-- WebApplicationFactory
-- Microsoft Playwright
-- Chromium
-- Postman
-- Docker and Docker Compose
-- GitHub Actions
-- Coverlet
-- ReportGenerator
-- Chrome Lighthouse
-- Git and GitHub
-Solution Structure
+- Browser File API
 
-CatalogManager/
+Some frontend libraries are loaded from CDNs and require internet access.
 
-├── CatalogManager.slnx
+## 2. Getting Started
 
-├── .github/
+Clone the repository:
 
-│   └── workflows/
+```powershell
+git clone https://github.com/Ksenia4ever/CatalogManager.git
+cd CatalogManager
+git switch develop
+```
 
-│       ├── c3-ci-cd.yml
+Restore NuGet dependencies:
 
-│       └── qa2-playwright.yml
+```powershell
+dotnet restore CatalogManager.slnx
+```
 
-├── Frontend/
+Alternatively, extract the source code ZIP and open `CatalogManager.slnx` in Visual Studio.
 
-│   ├── Controllers/
+## 3. Local Setup — Visual Studio and PostgreSQL
 
-│   │   ├── CategoriesController.cs
+### Step 1. Configure PostgreSQL
 
-│   │   ├── StoresController.cs
+Install PostgreSQL 17 and make sure its service is running.
 
-│   │   ├── ProductsController.cs
+Create a database named:
 
-│   │   ├── StoresMapController.cs
+`CatalogManagerDb`
 
-│   │   ├── StatisticsController.cs
+The default local PostgreSQL port is `5432`.
 
-│   │   ├── ProductAutocompleteController.cs
+### Step 2. Configure the Connection String
 
-│   │   ├── CurrencyRatesController.cs
+Use .NET User Secrets to avoid storing credentials in the repository.
 
-│   │   ├── NotesEditorController.cs
-│   │   └── ConnectivityController.cs
+Run from the solution directory:
 
-│   ├── Hubs/
+```powershell
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=CatalogManagerDb;Username=postgres;Password=YOUR_PASSWORD" --project Frontend
+```
 
-│   │   ├── NotesHub.cs
-│   │   └── ConnectivityHub.cs
+Replace `YOUR_PASSWORD` with your PostgreSQL password.
 
-│   ├── Services/
+### Step 3. Install EF Core CLI
 
-│   │   ├── ICurrencyRatesService.cs
+```powershell
+dotnet tool install --global dotnet-ef --version "10.0.*"
+```
 
-│   │   ├── PrivatBankCurrencyRatesService.cs
+If the tool is already installed, update it instead:
 
-│   │   ├── SharedNotesStore.cs
-│   │   ├── ConnectivityEventStore.cs
-│   │   └── ConnectivitySignalRForwarder.cs
+```powershell
+dotnet tool update --global dotnet-ef --version "10.0.*"
+```
 
-│   ├── ApiControllers/
+### Step 4. Apply Migrations
 
-│   ├── Models/
+```powershell
+dotnet ef database update --project Infrastructure --startup-project Frontend
+```
 
-│   ├── DTOs/
+This creates the database schema using the existing migrations.
 
-│   ├── Views/
+### Step 5. Run the Application
 
-│   │   ├── Categories/
+Open `CatalogManager.slnx` in Visual Studio.
 
-│   │   ├── Stores/
+Select **IIS Express** and press **Ctrl + F5**.
 
-│   │   ├── Products/
+Application URL:
 
-│   │   ├── StoresMap/
+`https://localhost:44361`
 
-│   │   ├── Statistics/
+The IIS Express port may differ on another computer. Use the HTTPS address shown by Visual Studio when the application starts.
 
-│   │   ├── CurrencyRates/
+Alternatively, run:
 
-│   │   ├── Connectivity/
-│   │   │   └── Index.cshtml
-│   │   ├── NotesEditor/
+```powershell
+dotnet run --project Frontend --launch-profile https
+```
 
-│   │   │   └── Index.cshtml
+This launch profile uses:
 
-│   │   └── Shared/
+`https://localhost:7168`
 
-│   │       └── _Layout.cshtml
+For local HTTPS certificate setup:
 
-│   ├── wwwroot/
+```powershell
+dotnet dev-certs https --trust
+```
 
-│   │   ├── js/
+### Step 6. Prepare Sample Data
 
-│   │   │   ├── stores-map.js
+Open the Categories page and create a category.
 
-│   │   │   ├── statistics.js
+Open the Stores page and create a store.
 
-│   │   │   ├── product-autocomplete.js
+Then open Products and create a product.
 
-│   │   │   ├── currency-rates.js
+Products must reference existing categories and stores.
 
-│   │   │   ├── notes-editor.js
-│   │   │   ├── connectivity.js
-│   │   │   └── c11-signalr.js
+For map functionality, stores should have valid latitude and longitude values.
 
-│   │   ├── css/
+## 4. Docker Deployment
 
-│   │   │   ├── stores-map.css
+Docker Compose runs the ASP.NET Core application and PostgreSQL in separate containers.
 
-│   │   │   ├── product-landing.css
+### Step 1. Configure Environment Variables
 
-│   │   │   ├── statistics.css
+Copy the environment template:
 
-│   │   │   ├── product-autocomplete.css
+```powershell
+Copy-Item .env.example .env
+notepad .env
+```
 
-│   │   │   ├── notes-editor.css
-│   │   │   └── connectivity.css
+Set your own password:
 
-│   │   └── robots.txt
+```dotenv
+POSTGRES_PASSWORD=YOUR_STRONG_LOCAL_PASSWORD
+```
 
-│   ├── App_Data/
+Do not commit `.env` to Git.
 
-│   │   └── SharedNotes/
+### Step 2. Start Docker Containers
 
-│   │       └── (runtime JSON documents, not committed)
-
-│   └── Program.cs
-
-├── Application/
-
-├── Domain/
-
-├── Infrastructure/
-
-├── UnitTests/
-
-├── IntegrationTests/
-
-│   └── Tests/
-
-│       ├── StatisticsIntegrationTests.cs
-
-│       ├── ProductAutocompleteIntegrationTests.cs
-
-│       └── PrivatBankCurrencyRatesServiceTests.cs
-
-├── E2ETests/
-
-│   ├── CatalogManager.E2ETests.csproj
-
-│   └── CatalogManagerBrowserTests.cs
-
-├── Postman/
-
-│   └── CatalogManager_QA1_B1_B9.postman_collection.json
-
-├── Dockerfile
-
-├── compose.yaml
-
-├── .dockerignore
-
-├── .env.example
-
-├── .gitignore
-
-├── B1_PAGINATION_GUIDE.md
-
-└── README.md
-
-The tree highlights the main project files. Other implementation files and tests may also exist.
-
-Do not commit .env, generated build outputs, or shared note JSON files.
-Architecture and Data Model
-CatalogManager follows a layered architecture.
-MVC Requests
-
-Browser
-
-   |
-
-   v
-
-MVC Controller
-
-   |
-
-   v
-
-Application Service
-
-   |
-
-   v
-
-Repository
-
-   |
-
-   v
-
-Entity Framework Core
-
-   |
-
-   v
-
-PostgreSQL
-
-REST API Requests
-
-HTTP Client
-
-   |
-
-   v
-
-API Controller
-
-   |
-
-   v
-
-Application Service
-
-   |
-
-   v
-
-Repository
-
-   |
-
-   v
-
-PostgreSQL
-
-Main Entities
-Category: unique category name and associated products.
-
-Store: name, address, latitude, longitude, and associated products.
-
-Product: name, description, price, optional image URL, CategoryId, and StoreId.
-
-Each product belongs to one category and one store.
-MVC ViewModels
-- CategoryFormViewModel
-- StoreFormViewModel
-- ProductFormViewModel
-  REST API actions use dedicated DTOs.
-C1 — MVC Application
-C1 implements Create, Read, Update, and Delete operations for Categories, Stores, and Products.
-
-Features include:
-- ASP.NET Core MVC controllers.
-- Razor Views.
-- Data Annotations.
-- Application business rules.
-- Antiforgery validation.
-- Related entity selection.
-- PostgreSQL persistence.
-  The MVC application provides the foundation for subsequent coursework stages.
-C5 — REST API
-The REST API provides JSON CRUD operations.
-Entity	Collection Endpoint	Item Endpoint
-Categories	/api/categories	/api/categories/{id}
-Stores	/api/stores	/api/stores/{id}
-Products	/api/products	/api/products/{id}
-
-
-Supported methods:
-- GET
-- POST
-- PUT
-- DELETE
-HTTP Status Codes
-- 200 OK: successful read.
-- 201 Created: successful creation.
-- 204 No Content: successful update or deletion.
-- 400 Bad Request: invalid input.
-- 404 Not Found: missing resource.
-- 409 Conflict: business rule violation.
-Example Product Request
-
-POST /api/products
-
-Content-Type: application/json
-
-
-{
-
-  "name": "Lenovo IdeaPad 5",
-
-  "description": "Laptop for everyday use",
-
-  "price": 25000,
-
-  "imageUrl": "https://example.com/laptop.jpg",
-
-  "categoryId": 1,
-
-  "storeId": 1
-
-}
-
-The supplied category and store IDs must exist.
-QA1 — Automated Postman API Testing
-QA1 includes automated positive and negative API test scenarios using Postman.
-
-The original collection contains 50 requests:
-1. Categories: 13 requests.
-2. Stores: 13 requests.
-3. Products: 15 requests.
-4. Cleanup and Relationship Checks: 9 requests.
-Automation
-- JavaScript pre-request scripts.
-- Automated response assertions.
-- Collection variables.
-- Unique test data.
-- Positive and negative scenarios.
-- Cleanup respecting foreign-key constraints.
-Verified Results
-Iterations	Passed Assertions	Failed
-1	62	0
-2	124	0
-
-
-Verified on 28 October 2026.
-B1 — Pagination API
-B1 implements offset pagination.
-
-GET /api/categories?skip=0&limit=10
-
-GET /api/stores?skip=0&limit=10
-
-GET /api/products?skip=0&limit=10
-
-Parameters:
-- skip: number of records skipped.
-- limit: maximum records returned.
-- nextLink: link to the next page, if available.
-  Paginated responses contain:
-- items
-- skip
-- limit
-- totalCount
-- nextLink
-  Requests without pagination parameters retain the original C5 array response.
-Pagination is executed at the database query level.
-
-Additional documentation: [B1_PAGINATION_GUIDE.md](B1_PAGINATION_GUIDE.md).
-C8 — Interactive Stores Map
-C8 integrates OpenStreetMap using Leaflet.js.
-
-Page: /StoresMap
-
-Data endpoint:
-
-GET /api/stores
-
-Features:
-- Interactive map.
-- Store markers.
-- Information popups.
-- Store search.
-- Visible marker counter.
-- Refresh without page reload.
-- Geographic coordinate validation.
-Files
-File	Purpose
-Frontend/Controllers/StoresMapController.cs	MVC controller
-Frontend/Views/StoresMap/Index.cshtml	Map page
-Frontend/wwwroot/js/stores-map.js	JavaScript
-Frontend/wwwroot/css/stores-map.css	CSS
-IntegrationTests/Tests/StoresMapIntegrationTests.cs	Tests
-
-
-Three integration test cases verify the map page and related resources.
-B9 — API Output Caching
-B9 uses ASP.NET Core Output Cache.
-Policy	API	Duration	Tag
-CategoriesCache	Categories	30 seconds	categories
-StoresCache	Stores	30 seconds	stores
-ProductsCache	Products	30 seconds	products
-
-
-The application uses:
-- AddOutputCache()
-- UseOutputCache()
-- IOutputCacheStore.EvictByTagAsync()
-  Successful API modifications invalidate the relevant cache tags.
-Direct database modifications or MVC actions are not automatically covered by API-controller invalidation.
-Verified Postman Results
-Metric	Result
-Requests	24
-Assertions	48
-Passed	48
-Failed	0
-
-
-Verified on 29 October 2026.
-
-These tests verify API behavior and data visibility, not a separately measured cache HIT.
-C4 — Docker Containerization
-C4 runs the ASP.NET Core application and PostgreSQL using Docker Compose.
-Architecture
-
-Windows Host
-
-    |
-
-    | http://localhost:8085
-
-    v
-
-Docker Compose
-
-    |
-
-    +--- web
-
-    |    ASP.NET Core 10
-
-    |    Port 8080
-
-    |       |
-
-    |       v
-
-    +--- db
-
-         PostgreSQL 17
-
-         Port 5432
-
-             |
-
-             v
-
-         Persistent Docker Volume
-
-Web application: http://localhost:8085
-
-PostgreSQL host port: 127.0.0.1:55432
-Start Containers
-
+```powershell
 docker compose up --build -d
+```
 
-Check Status
+Check their status:
 
+```powershell
 docker compose ps -a
+```
 
-Expected:
-- PostgreSQL: Healthy.
-- Application: Up.
-Database Migrations
-For a new Docker database, configure the database connection and apply migrations.
+### Step 3. Apply Database Migrations
 
-$env:ConnectionStrings__DefaultConnection = "Host=localhost;Port=55432;Database=CatalogManagerDb;Username=postgres;Password=YOUR_DOCKER_PASSWORD"
+The Docker configuration exposes PostgreSQL through localhost port `55432`.
+
+From Windows PowerShell in the solution directory:
+
+```powershell
+$env:ConnectionStrings__DefaultConnection = "Host=localhost;Port=55432;Database=CatalogManagerDb;Username=postgres;Password=YOUR_STRONG_LOCAL_PASSWORD"
 
 dotnet ef database update --project Infrastructure --startup-project Frontend
 
 Remove-Item Env:ConnectionStrings__DefaultConnection
+```
 
-Useful Commands
+Replace the password with the value from your `.env` file.
 
-docker compose restart
+### Step 4. Open the Application
 
-docker compose logs web --tail=80
+Docker application URL:
 
+`http://localhost:8085`
+
+For example:
+
+`http://localhost:8085/Products`
+
+To inspect logs:
+
+```powershell
+docker compose logs web --tail=100
+```
+
+To stop containers without deleting the database volume:
+
+```powershell
 docker compose down
+```
 
-docker compose up -d
-
-Do not use docker compose down -v unless database deletion is intentional.
-Verified Results
-- Docker containers started successfully.
-- PostgreSQL health checks passed.
-- Database migrations were applied.
-- MVC and API requests worked.
-- Data survived container restarts.
-- Docker was reused for QA2.
-C6 — Bootstrap Product Landing Pages
-C6 improves product presentation.
-
-Catalog: /Products
-
-Product page: /Products/Details/{id}
-
-Features:
-- Responsive product cards.
-- Individual landing pages.
-- Product names, descriptions, and prices.
-- Optional images.
-- Category and store information.
-- Custom CSS.
-Files
-File	Purpose
-Frontend/Views/Products/Index.cshtml	Catalog
-Frontend/Views/Products/Details.cshtml	Product details
-Frontend/wwwroot/css/product-landing.css	Styling
-
-
-No new database migration was required.
-C7 — SEO Optimization
-C7 improves technical SEO.
-
-Features:
-- Product-specific page titles.
-- Meta descriptions.
-- Canonical URLs.
-- Open Graph metadata.
-- robots.txt.
-- Chrome Lighthouse auditing.
-  Robots.txt
-  Frontend/wwwroot/robots.txt
+PostgreSQL data is stored in the `catalogmanager_pgdata` Docker volume.
 
-User-agent: *
+Do not use `docker compose down -v` unless you intend to remove the database volume.
 
-Allow: /
+Shared notes are stored as JSON files inside the web application's directory. The supplied Docker Compose configuration does not provide a separate persistent volume for these files, so notes may be lost if the web container is recreated.
 
-Verified Lighthouse Results
-Metric	Result
-SEO	100/100
-Passed Audits	9
-Not Applicable	1
-Failed Applicable Audits	0
+The C10/C11 event history is stored in memory and resets when the web application restarts.
 
+## 5. Application Pages
 
-The audit was performed on a local product details page on 30 October 2026.
-F1 — Data Visualization
-F1 adds a statistics dashboard using Chart.js.
+| Feature | Route |
+|---|---|
+| Categories | `/Categories` |
+| Stores | `/Stores` |
+| Products | `/Products` |
+| Product Creation | `/Products/Create` |
+| Stores Map | `/StoresMap` |
+| Statistics | `/Statistics` |
+| Product Search | `/ProductSearch` |
+| Currency Rates | `/CurrencyRates` |
+| Notes Editor | `/NotesEditor?doc=shared` |
+| Connectivity Comparison | `/Connectivity` |
 
-Page: /Statistics
+### REST API
 
-Endpoint:
+The main API endpoints are:
 
-GET /Statistics/Data
+- `/api/categories`
+- `/api/stores`
+- `/api/products`
+- `/api/search/products?q=example`
 
-Summary Indicators
-- Total products.
-- Total categories.
-- Total stores.
-Charts
-1. Products by Category.
-2. Products by Store.
-3. Product Price Distribution.
-Features
-- Fetch API requests.
-- Dynamic Chart.js rendering.
-- Refresh button.
-- Loading and error states.
-- Responsive layout.
-Files
-File	Purpose
-Frontend/Controllers/StatisticsController.cs	Controller
-Frontend/Views/Statistics/Index.cshtml	Dashboard
-Frontend/wwwroot/js/statistics.js	Chart logic
-Frontend/wwwroot/css/statistics.css	Styling
-IntegrationTests/Tests/StatisticsIntegrationTests.cs	Tests
-
-
-Four integration tests were added.
-Verified Results After F1
-Test Type	Passed
-Unit Tests	208
-Integration Tests	59
-Total	267
-
-
-QA2 — End-to-End Testing with Playwright
-QA2 introduces real-browser testing with Microsoft Playwright, Chromium, and xUnit.
+The API supports CRUD operations, validation, and pagination.
 
-Project: E2ETests/CatalogManager.E2ETests.csproj
+## 6. Completed Coursework Stages
 
-Main test class: E2ETests/CatalogManagerBrowserTests.cs
-Test Scenarios
-Test	Scenario
-QA2-01	Home page and Products navigation
-QA2-02	Category Create, Edit, Delete
-QA2-03	Required Category Name validation
-QA2-04	Product catalog and Create form
-QA2-05	Stores Map
-QA2-06	Statistics
-QA2-07	robots.txt
-
-
-Configuration
-Environment variable:
-
-CATALOGMANAGER_E2E_BASE_URL
-
-IIS Express: https://localhost:44361
-
-Docker: http://localhost:8085
-Install Playwright Chromium
-
-dotnet build E2ETests/CatalogManager.E2ETests.csproj
-
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\E2ETests\bin\Debug\net10.0\playwright.ps1" install chromium
-
-Run with IIS Express
-Keep the application running.
-
-$env:CATALOGMANAGER_E2E_BASE_URL = "https://localhost:44361"
-
-dotnet test E2ETests/CatalogManager.E2ETests.csproj
-
-Run with Docker
-
-docker compose up --build -d
-
-$env:CATALOGMANAGER_E2E_BASE_URL = "http://localhost:8085"
-
-dotnet test E2ETests/CatalogManager.E2ETests.csproj
-
-Verified Results
-Environment	Total	Passed	Failed
-IIS Express (earlier run)	7	7	0
-Docker (earlier run)	7	7	0
-GitHub Actions (verified run)	7	7	0
-
-
-A subsequent local Test Explorer run produced ERR_CONNECTION_REFUSED for all seven E2E tests because the application was not reachable at the configured IIS Express address. The tests did not reach their browser assertions.
-
-To run locally, first start the website and verify that the URL responds.
-Functional Coverage
-The seven E2E scenarios cover selected navigation, Category CRUD, validation, product form availability, Stores Map, Statistics, and robots.txt.
-
-They do not provide full Store or Product CRUD browser coverage.
-GitHub Actions — QA2 Automation
-Workflow:
-
-.github/workflows/qa2-playwright.yml
-Triggers
-- Pushes to develop.
-- Pushes to main.
-- Pull requests.
-- Manual execution.
-Workflow
-1. Checkout source code.
-2. Install .NET 10.
-3. Start Docker Compose.
-4. Prepare PostgreSQL.
-5. Restore NuGet dependencies.
-6. Apply EF Core migrations.
-7. Build the test project.
-8. Install Chromium.
-9. Execute seven Playwright tests.
-10. Upload test results.
-    Verified Result
-    Metric	Result
-    Workflow	QA2 - Playwright E2E Tests
-    Job	QA2 - Docker and Chromium
-    Branch	develop
-    Status	Success
-    Test Scenarios	7
-    Artifact	qa2-playwright-results
-Verified on 31 October 2026.
+| Stage | Description | Points |
+|---|---|---:|
+| C1 | MVC application with related entities and CRUD operations | 3 |
+| C5 | REST API with JSON DTOs and HTTP validation | 3 |
+| QA1 | Automated Web API testing with Postman | 2 |
+| B1 | REST API pagination | 2 |
+| C8 | Interactive stores map using Leaflet and OpenStreetMap | 3 |
+| B9 | ASP.NET Core Output Caching and invalidation | 3 |
+| C4 | Docker containerization | 1 |
+| C6 | Bootstrap product landing pages | 3 |
+| C7 | SEO optimization | 1 |
+| F1 | Statistics dashboard using Chart.js | 2 |
+| QA2 | Playwright end-to-end testing | 3 |
+| F2 | AJAX autocomplete using Select2 | 4 |
+| B2 | PrivatBank external API integration | 2 |
+| C12 | Dynamic notes editor | 3 |
+| C13 | Cross-browser notes synchronization | 2 |
+| C14 | Collaborative change visualization | 3 |
+| C15 | Browser File API import/export | 3 |
+| B4 | Lucene.NET full-text product search | 3 |
+| F3 | Drag-and-drop notes block sorting | 1 |
+| C10 | WebSockets, Long Polling, and Adaptive Polling | 5 |
+| C11 | SignalR real-time connectivity | 3 |
+| **Total** | **21 implemented stages** | **55** |
 
-To inspect the workflow, open:
+These are potential coursework points, not an officially awarded grade.
 
-GitHub → Actions → QA2 - Playwright E2E Tests
+### C1 — MVC Application
 
-CI execution does not require local IIS Express.
-F2 — AJAX Autocomplete
-F2 adds server-side autocomplete to Product Create and Edit forms.
+The project implements three related entities: Category, Store, and Product.
 
-Pages:
-- /Products/Create
-- /Products/Edit/{id}
-  Technologies:
-- jQuery
-- Select2
-- AJAX
-- ASP.NET Core MVC
-- Entity Framework Core
-- PostgreSQL
-Behavior
-- Search begins after three characters.
-- Requests are delayed approximately 300 milliseconds.
-- Backend filters matching records.
-- Up to 20 results are returned.
-- Existing MVC form submission is preserved.
-Files
-File	Purpose
-Frontend/Controllers/ProductAutocompleteController.cs	Endpoints
-Frontend/wwwroot/js/product-autocomplete.js	AJAX behavior
-Frontend/wwwroot/css/product-autocomplete.css	Styling
-Frontend/Views/Products/Create.cshtml	Create form
-Frontend/Views/Products/Edit.cshtml	Edit form
-IntegrationTests/Tests/ProductAutocompleteIntegrationTests.cs	Tests
-
-
-Verified Results
-Test Type	Before F2	After F2
-Unit Tests	208	208
-Integration Tests	59	65
-Total	267	273
-
-
-Six additional integration tests passed.
-B2 — PrivatBank External API Integration
-B2 integrates with the public PrivatBank currency exchange API.
-
-Base address:
-
-https://api.privatbank.ua/
-
-Endpoint:
-
-GET /p24api/pubinfo?json&exchange&coursid=5
-
-Pages:
-- /CurrencyRates
-- /CurrencyRates/Index
-Features
-- Server-side HttpClient requests.
-- JSON parsing.
-- Purchase and selling rates.
-- Refresh button.
-- Approximate currency converter.
-- Error handling.
-- Automated tests with controlled HTTP responses.
-Conversion Formula
-
-Foreign currency amount = UAH amount / Bank selling rate
-
-Example observed during testing:
-
-4000 UAH / 51.30 = 77.97 EUR
-
-Rates may change, and calculations are indicative.
-HttpClient Registration
-
-builder.Services.AddHttpClient<
-
-    ICurrencyRatesService,
-
-    PrivatBankCurrencyRatesService>(client =>
-
-{
-
-    client.BaseAddress = new Uri("https://api.privatbank.ua/");
-
-    client.Timeout = TimeSpan.FromSeconds(10);
-
-});
-
-Implementation Files
-File	Purpose
-Frontend/Services/ICurrencyRatesService.cs	Interface
-Frontend/Services/PrivatBankCurrencyRatesService.cs	Service
-Frontend/Controllers/CurrencyRatesController.cs	Controller
-Frontend/Views/CurrencyRates/Index.cshtml	Page
-Frontend/wwwroot/js/currency-rates.js	JavaScript
-Frontend/Program.cs	HttpClient registration
-IntegrationTests/Tests/PrivatBankCurrencyRatesServiceTests.cs	Tests
+The application supports creating, reading, updating, and deleting records.
 
+Implementation:
 
-Verified Results
-Four B2 service tests passed:
-- ValidResponse_ParsesCurrencyRates
-- ServerError_ThrowsHttpRequestException
-- NoValidRates_ThrowsJsonException
-- MalformedJson_ThrowsJsonException
-  The currency page and converter were also manually verified.
-C12 — Dynamic Notes Editor
-Overview
-C12 introduces a block-based notes editor.
-
-The initial implementation uses JavaScript, DOM manipulation, and localStorage.
-
-C13 subsequently extended the editor with server-side persistence, C14 added visualization of remote changes, and C15 added browser-based file import and export.
-Editor Page
-/NotesEditor
-Supported Block Types
-1. Heading 1.
-2. Heading 2.
-3. Paragraph.
-4. Bulleted List.
-5. Numbered List.
-Features
-- Add editable blocks.
-- Edit text and block types.
-- Delete blocks.
-- Move blocks up and down.
-- Drag and drop blocks by their handles (F3).
-- Preview formatted text.
-- Automatically save document state.
-- Restore previous content.
-C12 Persistence
-The original C12 document is stored using the browser's Web Storage API.
+- `Domain/Entities/`
+- `Frontend/Controllers/`
+- `Frontend/Views/`
+- `Application/`
+- `Infrastructure/`
 
-A localStorage entry is associated with the website origin and browser profile.
+### C5 — REST API
 
-In C13, the editor gained an Import my C12 local notes button for transferring existing local notes into a server-side shared document.
-Implementation Files
-File	Purpose
-Frontend/Controllers/NotesEditorController.cs	Controller
-Frontend/Views/NotesEditor/Index.cshtml	View
-Frontend/wwwroot/js/notes-editor.js	Block editing
-Frontend/wwwroot/css/notes-editor.css	Styling
-Frontend/Views/Shared/_Layout.cshtml	Navigation
+Implemented JSON CRUD endpoints for categories, stores, and products.
 
+The API uses DTOs, input validation, and appropriate HTTP status codes.
 
-Verified C12 Results
-The editor was manually verified in Visual Studio and Chrome.
+Implementation:
 
-Testing covered creating, editing, moving, deleting, previewing, saving, and restoring blocks.
+- `Frontend/ApiControllers/`
+- `Frontend/DTOs/`
 
-No PostgreSQL migration was required.
-
-C12 result: implemented and manually verified.
-C13 — Shared Notes Synchronization with SignalR
-Overview
-C13 extends the block editor with server-side persistence and synchronization across browser sessions.
+### QA1 — Automated API Testing
 
-Technologies:
-- ASP.NET Core SignalR.
-- SignalR JavaScript client.
-- Server-side JSON files.
-- Document identifiers.
-- Version-based conflict detection.
-Editor URLs
-- /NotesEditor
-- /NotesEditor?doc=shared
-- /NotesEditor?doc=testing
-  Documents with different identifiers are independent.
-Architecture
-
-Chrome / Browser A        Edge / Browser B
-
-        |                        |
-
-        +--------- SignalR ------+
-
-                     |
-
-                     v
-
-                NotesHub
-
-                     |
-
-                     v
-
-              SharedNotesStore
-
-                     |
-
-                     v
-
-          App_Data/SharedNotes/
+Created a Postman collection with automated positive and negative HTTP tests, response validation, and dynamic variables.
 
-                 <id>.json
+Implementation:
 
-SignalR Methods
-JoinDocument(documentId):
-- Validates the document ID.
-- Joins the appropriate SignalR group.
-- Returns the latest document snapshot.
-  SaveDocument(documentId, expectedVersion, blocks):
-- Validates the document.
-- Checks the expected version.
-- Saves the updated document.
-- Sends DocumentChanged to other connections.
-Server Storage
-Service:
+- `Postman/`
 
-Frontend/Services/SharedNotesStore.cs
+### B1 — Pagination API
 
-Local development folder:
+Implemented server-side pagination using `skip`, `limit`, and `nextLink`.
 
-Frontend/App_Data/SharedNotes/
+The API preserves backward compatibility with requests without pagination parameters.
 
-Example:
+Implementation:
 
-Frontend/App_Data/SharedNotes/shared.json
+- `Frontend/ApiControllers/`
+- `Infrastructure/Repositories/`
+- `B1_PAGINATION_GUIDE.md`
 
-Document IDs accept 1–64 Latin letters, digits, underscores, and hyphens.
+### C8 — Stores Map
 
-Generated document data should not be committed to Git.
-Version Control
-Every document snapshot contains a version.
+Implemented an interactive map using Leaflet and OpenStreetMap.
 
-The browser provides the version it last received when saving.
+Stores are displayed as markers with searchable names and details.
 
-If another browser has already saved a newer document, the server rejects the stale update.
+Implementation:
 
-This prevents silent overwrites but does not automatically merge simultaneous edits.
-Implementation Files
-File	Responsibility
-Frontend/Hubs/NotesHub.cs	SignalR hub
-Frontend/Services/SharedNotesStore.cs	JSON storage and version checks
-Frontend/Program.cs	Service and hub registration
-Frontend/Views/NotesEditor/Index.cshtml	Shared editor
-Frontend/wwwroot/js/notes-editor.js	Client synchronization
-.gitignore	Exclude generated JSON documents
+- `Frontend/Controllers/StoresMapController.cs`
+- `Frontend/Views/StoresMap/`
+- `Frontend/wwwroot/js/stores-map.js`
 
+### B9 — Output Caching
 
-Verified C13 Results
-- Shared document opened in two browsers.
-- SignalR connection established.
-- Changes appeared in the second browser automatically.
-- Editing worked in both directions.
-- Documents were restored after restarting IIS Express.
-- shared and testing remained independent.
-  No database migration was required.
-C13 result: implemented and manually verified.
-C14 — Collaborative Change Visualization
-Overview
-C14 extends the SignalR-based shared notes editor with visual feedback for document changes received from another browser.
+Implemented caching of REST API GET responses for categories, stores, and products.
 
-It builds on C12 and C13 without replacing their existing functionality.
+Cached results expire after 30 seconds and can be invalidated after data modifications.
 
-Coursework value: 3 points.
-Page
-/NotesEditor?doc=shared
+Implementation:
 
-The same document should be open in two browser sessions.
-Technologies
-- JavaScript.
-- DOM manipulation.
-- CSS animations.
-- Bootstrap.
-- ASP.NET Core SignalR.
-- Document snapshot comparison.
-Main Features
-- Detect blocks added in another browser.
-- Highlight remotely added blocks.
-- Highlight remotely edited blocks.
-- Show visual feedback for blocks moved remotely.
-- Notify users about blocks deleted in another browser.
-- Display recent remote changes.
-- Synchronize document versions without reloading.
-- Preserve existing editing, saving, preview, and reordering.
-Visualization Architecture
+- `Frontend/Program.cs`
+- `Frontend/ApiControllers/`
 
-Browser A
+### C4 — Docker Containerization
 
-    |
+The application can run using Docker Compose with separate ASP.NET Core and PostgreSQL services.
 
-    | Edit / Add / Delete / Move block
+Implementation:
 
-    v
+- `Dockerfile`
+- `compose.yaml`
+- `.env.example`
 
-SignalR: SaveDocument
+### C6 — Bootstrap Landing Pages
 
-    |
+Implemented responsive product cards and individual product detail pages.
 
-    v
+Implementation:
 
-NotesHub
+- `Frontend/Views/Products/`
+- `Frontend/wwwroot/css/product-landing.css`
 
-    |
+### C7 — SEO Optimization
 
-    v
+Added product-specific SEO metadata, canonical URLs, Open Graph tags, and robots.txt.
 
-SharedNotesStore
+Technical SEO was evaluated using Chrome Lighthouse.
 
-    |
+Implementation:
 
-    v
+- `Frontend/Views/Products/Details.cshtml`
+- `Frontend/Views/Shared/_Layout.cshtml`
+- `Frontend/wwwroot/robots.txt`
 
-Server Snapshot (new version)
+### F1 — Data Visualization
 
-    |
+Implemented a statistics dashboard using Chart.js.
 
-    | DocumentChanged
+The dashboard displays aggregated catalog data.
 
-    v
+Implementation:
 
-Browser B
+- `Frontend/Controllers/StatisticsController.cs`
+- `Frontend/Views/Statistics/`
+- `Frontend/wwwroot/js/statistics.js`
 
-    |
+### QA2 — End-to-End Testing
 
-    v
+Implemented seven browser-based E2E tests using Playwright and Chromium.
 
-Compare previous and new snapshots
+GitHub Actions automatically runs the tests inside a Docker-based environment.
 
-    |
+Implementation:
 
-    +--- Added block -> Green animation
+- `E2ETests/CatalogManagerBrowserTests.cs`
+- `.github/workflows/qa2-playwright.yml`
 
-    |
+### F2 — AJAX Autocomplete
 
-    +--- Edited block -> Yellow highlight
+Implemented category and store autocomplete fields using jQuery and Select2.
 
-    |
+Search begins after entering three characters, with a short delay before sending AJAX requests.
 
-    +--- Moved block -> Purple animation
+Implementation:
 
-    |
+- `Frontend/Controllers/ProductAutocompleteController.cs`
+- `Frontend/wwwroot/js/product-autocomplete.js`
+- `Frontend/Views/Products/Create.cshtml`
+- `Frontend/Views/Products/Edit.cshtml`
 
-    +--- Deleted block -> Warning notification
+### B2 — External API Integration
 
-    |
+Integrated the PrivatBank public API to display currency exchange rates and an approximate currency converter.
 
-    v
+Implementation:
 
-Recent Remote Changes panel
+- `Frontend/Services/PrivatBankCurrencyRatesService.cs`
+- `Frontend/Controllers/CurrencyRatesController.cs`
+- `Frontend/Views/CurrencyRates/`
 
-Snapshot Comparison
-The JavaScript code compares the previous document with the newly received snapshot.
+### C12 — Dynamic Notes Editor
 
-Each block has:
-- id
-- type
-- text
-  The block's position is determined by its index in the document array.
-The comparison uses block IDs to identify changes.
+Implemented a block-based editor supporting headings, paragraphs, and lists.
 
-A block is classified as:
-- Added: ID exists in the new snapshot but not the previous one.
-- Edited: ID exists in both snapshots, but text or type differs.
-- Moved: block position differs and the block has not already been classified as edited.
-- Deleted: ID exists in the previous snapshot but not the new one.
-  If a block is both edited and moved in one update, the current visualization prioritizes the edit classification.
-Visual Effects
-Change	Visualization
-Added	Green highlight and Added remotely label
-Edited	Yellow highlight and Edited remotely label
-Moved	Purple animation and Moved remotely label
-Deleted	Warning message showing the number of removed blocks
+The original local editor was extended in later stages with shared server-side persistence.
 
+Implementation:
 
-Visual markers are temporary and disappear automatically.
-Recent Remote Changes
-The editor contains a Recent remote changes panel.
+- `Frontend/Controllers/NotesEditorController.cs`
+- `Frontend/Views/NotesEditor/`
+- `Frontend/wwwroot/js/notes-editor.js`
 
-The panel displays up to eight recent remote change messages in the current browser session.
+### C13 — Cross-Browser Synchronization
 
-Examples:
+Implemented synchronization of shared notes using SignalR.
 
-Added: paragraph (position 3)
+Documents are stored as versioned JSON files on the server.
 
-Edited: heading2 (position 3)
+Implementation:
 
-Moved: paragraph to position 1
+- `Frontend/HUBS/NotesHub.cs`
+- `Frontend/Services/SharedNotesStore.cs`
+- `Frontend/wwwroot/js/notes-editor.js`
 
-Deleted: paragraph (previous position 2)
+### C14 — Collaborative Change Visualization
 
-This is a client-side activity history, not a permanent server-side audit log.
+Added visual notifications for remote document changes, including added, updated, moved, and deleted blocks.
 
-The history is not intended to identify individual users.
-Remote Updates Only
-Visual effects are triggered when the editor receives a DocumentChanged event from another SignalR connection.
+Implementation:
 
-A user's own local changes are saved normally without being presented as remote changes.
-Document ID Handling
-The client validates document IDs before joining a SignalR group.
+- `Frontend/wwwroot/js/notes-editor.js`
+- `Frontend/wwwroot/css/notes-editor.css`
 
-The latest JavaScript fix handles invalid or missing URL values.
+### C15 — Browser File API
 
-Examples:
-URL parameter	Result
-No doc parameter	Opens shared
-?doc=shared	Opens shared
-?doc=testing	Opens testing
-?doc=null	Falls back to shared
-?doc=undefined	Falls back to shared
+Implemented JSON document import and JSON/Markdown export using FileReader, Blob, and browser object URLs.
 
+Implementation:
 
-The null and undefined values are treated as invalid identifiers by the client.
+- `Frontend/wwwroot/js/notes-editor.js`
 
-The server-side SharedNotesStore.ValidateId() validation remains enabled.
-Implementation Files
-File	Responsibility
-Frontend/wwwroot/js/notes-editor.js	Snapshot comparison, event history, visual effects, document ID handling
-Frontend/wwwroot/css/notes-editor.css	Remote-change animations and highlighting
-Frontend/Views/NotesEditor/Index.cshtml	Remote activity display
+### B4 — Full-Text Product Search
 
+Implemented a product search API using Lucene.NET.
 
-C14 reuses:
-- Frontend/Hubs/NotesHub.cs
-- Frontend/Services/SharedNotesStore.cs
-- SignalR registration in Frontend/Program.cs
-  No new libraries or EF Core migrations were required.
-Manual Verification
-C14 was verified using Visual Studio, IIS Express, and two browser sessions.
-
-Verification steps:
-1. Open /NotesEditor?doc=shared in two browsers.
-2. Confirm SignalR is connected.
-3. Add a block in the first browser.
-4. Verify that the second browser receives the new block.
-5. Edit a block and observe the remote change activity.
-6. Verify the recent changes panel.
-7. Test changes to an existing heading.
-8. Test the handling of an invalid document URL such as ?doc=null.
-9. Confirm that the editor continues to work with the server-side C13 document.
-Observed results included:
-- Connected · live synchronization.
-- Updated from another browser.
-- New server version numbers.
-- Recent remote changes panel.
-- Remote Added and Edited events.
-- Existing document blocks preserved across updates.
-  The user also confirmed that the updated C14 implementation works after correcting the document ID handling.
-Automated Testing Status
-C14 changes are primarily client-side JavaScript and CSS.
-
-No new automated C14 test count is claimed.
-
-The latest Visual Studio Test Explorer screenshot showed:
-Project	Passed
-UnitTests	208
-IntegrationTests	69
-C# tests total	277
-
-
-Seven local E2E tests failed during a separate run with ERR_CONNECTION_REFUSED because the application was unavailable at https://localhost:44361.
-
-This is an environment/connection failure, not evidence of failed browser assertions.
-
-The existing QA2 suite has previously passed using Docker and GitHub Actions.
-
-A complete E2E regression run against the final C14 commit is recommended.
-Limitations
-- Remote change history is session-local.
-- Visual effects are temporary.
-- No persistent audit log is stored.
-- No author identities or per-user cursors are displayed.
-- Simultaneous edits are not merged automatically.
-- C13 version conflict checks remain in effect.
-- The editor has no document-level authentication or authorization.
-- The shared editor is unsuitable for confidential information.
-C14 Conclusion
-C14 adds visual collaborative feedback to the shared notes editor.
-
-It demonstrates:
-- Comparing document snapshots.
-- Detecting changes by block IDs.
-- DOM updates and CSS animations.
-- Reacting to SignalR notifications.
-- Maintaining a client-side history of recent changes.
-  C14 result: implemented and manually verified.
-C15 — Browser File API: Document Import and Export
-Overview
-C15 adds browser-based file handling to the collaborative Notes Editor. It extends the existing C12–C14 functionality without changing the ASP.NET Core controllers, SignalR hub, server-side storage or PostgreSQL schema.
-
-Coursework value: 3 points.
-Editor Page
-/NotesEditor?doc=shared
-
-The interface provides three file operations:
-- Import JSON file — selects a local .json file and loads its blocks into the current shared document.
-- Export JSON — downloads the current block document with its block IDs, types, and text, allowing later re-import.
-- Export Markdown — downloads a readable .md file using Markdown headings, paragraphs, and lists. Markdown import is not part of C15.
-Browser APIs and Technologies
-- HTML file input and the browser's File API.
-- FileReader for reading local file contents in JavaScript.
-- JSON parsing and document structure validation.
-- Blob and URL.createObjectURL() for creating downloadable files.
-- DOM interaction and click events for importing and exporting.
-- SignalR for distributing an imported document to other connected browsers after successful server-side saving.
-Import Architecture
-Local JSON file
-|
-v
-Browser file picker / File API
-|
-v
-FileReader -> JSON parse -> validate blocks
-|
-v
-User confirms replacement
-|
-v
-Notes Editor document state
-|
-v
-SignalR SaveDocument
-|
-v
-SharedNotesStore JSON persistence
-|
-v
-DocumentChanged -> Other browsers
-Export Architecture
-Current editor blocks
-|
-+---- JSON serialization ----> JSON Blob
-|
-+---- Markdown formatting ---> Markdown Blob
-|
-v
-Browser download via object URL
-Import Validation and Safety
-The browser implementation validates the selected file and its JSON structure before using the contents. It applies a file-size limit and asks the user to confirm before replacing the active shared document. Invalid or unsupported files should produce a visible error instead of silently replacing the document.
-
-Importing into a shared document affects other connected browsers after saving. The existing C13 version checks still protect against silently overwriting a newer server version; simultaneous changes are not automatically merged.
-
-For safety, imported document text is handled through the existing editor rendering and escaping logic rather than executed as HTML or JavaScript.
-Implementation Files
-File	Responsibility
-Frontend/wwwroot/js/notes-editor.js	Browser file input, import, JSON/Markdown export, validation and integration with the shared editor
-Frontend/Views/NotesEditor/Index.cshtml	Existing editor page; no additional Razor changes required for this C15 implementation
-Frontend/Hubs/NotesHub.cs	Reused SignalR synchronization, unchanged
-Frontend/Services/SharedNotesStore.cs	Reused server-side persistence, unchanged
-
-
-No new .NET dependencies, PostgreSQL migrations or backend controllers were required.
-Manual Verification
-C15 was manually verified in the browser. The demonstrated workflow includes:
-1. Open the shared notes editor with an existing document.
-2. Export the current document as JSON and confirm the file is downloaded.
-3. Open a separate test document, for example ?doc=c15test.
-4. Import the exported JSON file, confirm replacement, and verify that its blocks appear.
-5. Confirm that the imported changes reach another browser through SignalR.
-6. Export Markdown and inspect the downloaded .md document.
-7. Verify that invalid JSON is rejected without replacing the document.
-8. Confirm that the existing editor, remote-change visualization, and server persistence still work.
-   The user confirmed that the C15 implementation works. No new automated C15 test count is claimed.
-Limitations
-- JSON import and JSON/Markdown export are supported; Markdown import is not included.
-- The browser's File API does not provide unrestricted access to the local file system; a user must select a file for import.
-- Import replaces the active document after confirmation, rather than merging block-by-block.
-- A downloaded export is a snapshot, not an ongoing live link to the shared document.
-- Shared documents remain unauthenticated in this coursework implementation and must not contain confidential data.
-C15 Conclusion
-C15 demonstrates practical browser file handling by reading local JSON files, validating imported data, creating downloadable JSON and Markdown content, and connecting the result to the existing SignalR-based collaborative editor.
-
-C15 result: implemented and manually verified.
-B4 — Full-Text Product Search with Lucene.NET
-Overview
-B4 adds full-text searching to the existing C5 product catalog REST API using Lucene.NET. It indexes product names and descriptions and returns matching products ranked by Lucene relevance score.
-
-Coursework value: 3 points.
-Technologies
-- Lucene.Net (4.8.0-beta00018)
-- Lucene.Net.Analysis.Common (4.8.0-beta00018)
-- Lucene.Net.QueryParser (4.8.0-beta00018)
-- ASP.NET Core MVC and Web API
-- Existing IProductService and Entity Framework Core/PostgreSQL catalog data
-Search API
-GET /api/search/products?q=laptop
-GET /api/search/products?q=laptop&limit=10
-The API returns JSON search results. When a matching product is present, the response includes the product's ID, name, description, price, image URL, category ID, store ID and relevance score. The query is limited to 100 characters, and the requested result limit is clamped to the supported range of 1–50. An empty search returns no matches.
-Search Page
-/ProductSearch
-
-The Razor page lets users enter search text and view product results with links to existing product details pages.
-How the Search Works
-HTTP request / ProductSearch page
-|
-v
-ProductSearchApiController / ProductSearchController
-|
-v
-ProductSearchService
-|
-+-- IProductService.GetAllAsync()
-|          |
-|          v
-|    PostgreSQL products
-|
-+-- Lucene RAMDirectory
-+-- StandardAnalyzer
-+-- IndexWriter (name and description)
-+-- MultiFieldQueryParser
-+-- IndexSearcher
-|
-v
-Ranked product results
-The service retrieves current products using the existing application service and constructs an in-memory Lucene index for each search request. Consequently, products created, updated, or deleted through the existing MVC/API flows are reflected in subsequent searches without requiring changes to existing CRUD controllers.
-
-Trade-off: rebuilding the index for every search is appropriate for a small coursework catalog but inefficient for high traffic or large datasets. A production implementation would retain a persistent index and update it incrementally as products change.
-Implementation Files
-File	Responsibility
-Frontend/Services/ProductSearchService.cs	Lucene index construction, analysis, search and result mapping
-Frontend/ApiControllers/ProductSearchApiController.cs	JSON search endpoint
-Frontend/Controllers/ProductSearchController.cs	MVC search page
-Frontend/Views/ProductSearch/Index.cshtml	Search form and results
-Frontend/Program.cs	Dependency injection and routing registration
-Frontend/Views/Shared/_Layout.cshtml	Optional search navigation link
-Frontend/CatalogManager.csproj	Lucene.NET NuGet package references
-
-
-Manual Verification
-The B4 implementation was checked locally and the user confirmed it works.
-1. Open /ProductSearch.
-2. Search for a term present in a product name or description.
-3. Check the product results and product-detail links.
-4. Open /api/search/products?q=laptop and inspect the JSON response; actual matches depend on the products in the local database.
-5. Add or edit a product, then repeat a relevant search to verify the current catalog is used.
-6. Search for a term with no matches and check the empty result.
-   No additional B4 automated-test count is claimed without a separately verified test run. No new PostgreSQL tables or EF Core migrations were required.
-Limitations
-- Each search rebuilds an in-memory index, which increases CPU usage as the catalog grows.
-- Searches are based on the latest products returned by IProductService, not an independently stored Lucene index.
-- Search behavior depends on tokenization and Lucene.NET analyzer rules.
-- B4 adds search functionality but does not replace the existing F2 Select2 autocomplete.
-  B4 result: implemented and manually verified.
-F3 — Drag-and-Drop Notes Block Reordering
-Overview
-F3 extends the collaborative Notes Editor introduced in C12–C15 with direct mouse-based block reordering. It uses the browser's HTML Drag and Drop API and preserves the existing Up/Down buttons, editing, preview, import/export, and SignalR synchronization.
-
-Coursework value: 1 point.
-Editor Page
-/NotesEditor?doc=f3test
-Features
-- Drag a block using the dedicated drag handle.
-- Display a visual drop target while dragging.
-- Reorder the underlying JavaScript blocks array on drop.
-- Automatically save the new order using the existing debounced SignalR SaveDocument flow.
-- Restore the saved order after reloading the page.
-- Synchronize the new order to another browser connected to the same document.
-- Continue supporting Up/Down buttons for reordering without dragging.
-Implementation
-The editor adds drag-related event handling to its existing JavaScript. The new block order remains part of the shared document snapshot, so no separate persistence API is required.
-Implementation Files
-File	Responsibility
-Frontend/wwwroot/js/notes-editor.js	HTML drag/drop handling, insertion feedback, reorder and autosave
-Frontend/Hubs/NotesHub.cs	Existing SignalR synchronization, unchanged
-Frontend/Services/SharedNotesStore.cs	Existing server-side JSON persistence, unchanged
-
-
-No new NuGet packages, backend controllers, or EF Core migrations are required.
-Manual Verification
-1. Open /NotesEditor?doc=f3test and create three recognizable blocks.
-2. Drag the third block to the first position using its drag handle.
-3. Confirm that the interface reflects the new order.
-4. Wait for the server save indication and reload the page.
-5. Verify that the order is preserved after reload.
-6. Open the same document in a second browser and verify synchronization.
-7. Check that the original Up/Down controls and C15 JSON/Markdown actions still work.
-The user confirmed that F3 works in the browser. No new automated F3 test count is claimed.
-Limitations
-- Drag-and-drop requires suitable pointer interactions; Up/Down controls remain available as an alternative.
-- Conflict detection and shared editing behavior remain governed by C13 version checks.
-- Reordering does not add user authentication or document-level access control.
-F3 Conclusion
-F3 demonstrates interactive HTML drag-and-drop, dynamic UI reordering, and persistent shared document state. F3 result: implemented and manually verified.
-C10 — Connectivity: WebSockets, Long Polling and Adaptive Polling
-Objective and coursework requirement
-C10 (5 points) compares three client-server interaction mechanisms in a non-chat scenario. CatalogManager demonstrates real-time catalog event notifications and includes a comparison of network usage, delivery characteristics and protocol overhead.
-
-Page: /Connectivity (also /Connectivity/Index). Events arise from demo publishing and Product Create, Update and Delete operations in the MVC and REST API paths.
-Implementation
-- Native WebSockets: /Connectivity/Socket accepts a persistent WebSocket connection. The browser subscribes with subscribe:<lastId>. New events can be pushed without repeated HTTP GET requests.
-- Long Polling: GET /Connectivity/LongPoll?after=<lastId> holds an HTTP request until an event is published or 20 seconds elapse. The client immediately issues a new request after each response.
-- Adaptive Polling: GET /Connectivity/Poll?after=<lastId> returns immediately. JavaScript starts with a 500 ms interval, increases the interval following empty responses (up to 5000 ms), and resets it when events arrive.
-- Latest state: GET /Connectivity/Latest returns the current event ID and application instance ID; the latter supports detecting restarts when restoring client cursors.
-- Manual event generation: POST /Connectivity/DemoEvent publishes a demonstration event using MVC antiforgery validation.
-- Event history: a bounded in-memory ConnectivityEventStore retains the 200 most recent events until the server process restarts. The browser retrieves them using GET /Connectivity/Poll?after=0 and displays them under Server event history.
-Main files
-File	Responsibility
-Frontend/Services/ConnectivityEventStore.cs	Thread-safe bounded event log, event IDs, asynchronous waiting and cancellation handling
-Frontend/Controllers/ConnectivityController.cs	Comparison page, Poll/LongPoll/Socket/Latest/DemoEvent endpoints
-Frontend/Views/Connectivity/Index.cshtml	Side-by-side comparison and demo form
-Frontend/wwwroot/js/connectivity.js	Start/Stop controls, three protocols, counters, history and page lifecycle
-Frontend/wwwroot/css/connectivity.css	Status styles and event feeds
-Frontend/Controllers/ProductsController.cs	Product change event publication through MVC actions
-Frontend/ApiControllers/ProductsApiController.cs	Product change event publication through API actions
-Frontend/Program.cs	Registration of the shared event store and WebSocket middleware
-Frontend/Views/Shared/_Layout.cshtml	Connectivity navigation link
-
-
-No additional NuGet packages or EF Core migrations were needed for C10.
-How events are delivered
-Product MVC/API Create, Update, Delete       Publish demo event
-                  |                                  |
-                  +------------- Publish ------------+
-                                  |
-                          ConnectivityEventStore
-                                  |
-                  +---------------+----------------+
-                  |               |                |
-             WebSocket        Long Poll          Adaptive Poll
-             push frames      waiting GET        periodic GET
-                  |               |                |
-                  +---------------+----------------+
-                                  |
-                            Browser counters
-                                  |
-                     Shared server event history
-Comparative analysis — required by C10
-Criterion	WebSockets	Long Polling	Adaptive Polling
-Connection model	Persistent, bidirectional	Repeated HTTP requests, each held while waiting	Short HTTP requests on a changing timer
-Delivery of a new event	Server can push immediately on the open socket	Server responds to the pending request when an event appears	Event is discovered on the next scheduled poll
-Requests during inactivity	Normally one established connection	One long-lived request approximately every 20 seconds, plus reconnects	Frequent requests; the interval backs off to 5 seconds
-Protocol overhead	Initial handshake and WebSocket framing; no HTTP header on every event	HTTP headers for each request and response	HTTP headers for every poll, including empty responses
-Resource trade-off	Server maintains an open socket and connection state	Server maintains a pending request and asynchronous wait	No long-lived server connection, but repeated requests consume network and CPU time
-Expected response latency	Generally low for a healthy open connection	Generally low while a long poll is active	Bounded approximately by the polling interval, plus processing and network latency
-Main benefit	Low-latency event push	Works with conventional HTTP request/response	Simple client logic and dynamically adjustable request rate
-
-
-Interpretation: WebSockets generally have lower per-event request overhead for active real-time updates. Long Polling trades repeated HTTP overhead for near-immediate notification. Adaptive Polling reduces idle traffic as the interval grows, but may delay detection of updates. Actual results depend on workload, browser, server and network conditions.
-Metrics and measurement limits
-The UI reports:
-- Requests / connections: one count for establishing a WebSocket versus HTTP requests for the polling modes.
-- Received events: number delivered to that transport in the current live measurement session.
-- Response bytes: estimated size of JSON response payloads on the client; excludes HTTP headers, WebSocket frames, TLS records and handshakes. This is not total network traffic.
-- Last delivery delay: client time − server event timestamp. Clock synchronization and page reload/history replay can distort it; a replayed event's age must not be interpreted as real-time transport latency.
-- Current poll interval: meaningful only for Adaptive Polling. A dash for WebSockets and Long Polling is correct because neither has a fixed client polling interval.
-For a fair quantitative comparison, publish multiple demo events while all three transports are already connected, repeat the experiment and compare the counters. Use Chrome DevTools → Network (WS and Fetch/XHR) to inspect actual request counts and HTTP overhead. For resource usage, observe server CPU/memory and connections under the same test duration; do not infer measured resource savings from payload counters alone. Save measured results or screenshots for the defense rather than inventing benchmark values.
-Manual verification performed
-- All three transport panels reached Connected and received the same manually published event.
-- A screenshot showed a live event delivered through WebSockets, Long Polling and Adaptive Polling (different request counts and delivery times, as expected).
-- Product creation, editing and deletion generated catalog events.
-- The Server event history panel showed two demo events and subsequent product update/deletion events after navigation away and back to the Connectivity page.
-- The client now automatically starts all three modes when the comparison page loads. Connections are intentionally stopped on navigation, then restarted on return.
-- A canceled long-poll HTTP request is treated as expected browser navigation rather than an application failure.
-Historical events are displayed separately from live transport counters so old events are not misrepresented as live delivery measurements. Server history is in-memory and is cleared on application restart. There is no permanent audit log.
-Verification remaining before final submission
-- Record a reproducible comparison of all three modes with multiple new events and DevTools Network evidence of request and header overhead.
-- Inspect CPU and memory usage or state explicitly that resource efficiency is a qualitative comparison rather than a measured benchmark.
-- Run the current UnitTests, IntegrationTests and QA2 E2E suite (the previously documented results predate C10). Add C10-specific automated tests if time allows.
-- Review the final C10 code and successful CI run before declaring a fully regression-tested version.
-C10 status: implemented and manually demonstrated; quantitative resource/network-overhead evidence and final regression testing remain to be confirmed. Potential value: 5 points.
-C11 — Real-Time Event Delivery with SignalR
-Objective and coursework requirement
-C11 (3 points) extends the C10 connectivity example with ASP.NET Core SignalR. Rather than introducing an unrelated demonstration, the existing event source for catalog updates is reused. The page /Connectivity compares four approaches: native WebSockets, Long Polling, Adaptive Polling (C10), and SignalR (C11).
-
-SignalR is a higher-level real-time framework. It negotiates an available transport and may itself use WebSockets; it must not be presented as a fourth fundamentally independent low-level network protocol.
-Implementation and event flow
-Product Create / Edit / Delete (MVC and REST API)    DemoEvent
-                        |                               |
-                        +------------ Publish ----------+
-                                        |
-                                        v
-                              ConnectivityEventStore
-                                        |
-                                        +--> C10 WebSockets / Long Poll / Adaptive Poll
-                                        |
-                                        v
-                         ConnectivitySignalRForwarder
-                                        |
-                                        v
-                               ConnectivityHub
-                                        |
-                           ConnectivityEventReceived
-                                        |
-                                        v
-                         c11-signalr.js -> C11 panel
-- ConnectivityHub exposes GetHistory() to obtain event history from the shared store.
-- ConnectivitySignalRForwarder, registered as a hosted background service, waits for new C10 events and broadcasts ConnectivityEventReceived to SignalR connections.
-- c11-signalr.js establishes a SignalR connection, receives events, and updates its counters and feed. It has Start/Stop controls and supports reconnection as implemented in the client.
-- The fourth card displays connection status, connection count, received live events, approximate JSON payload size, last delivery delay, and event messages.
-- Historical events remain in the separate Server event history panel and are not added to live transport measurements.
-Main files
-File	Responsibility
-Frontend/Hubs/ConnectivityHub.cs	SignalR hub and GetHistory()
-Frontend/Services/ConnectivitySignalRForwarder.cs	Hosted service forwarding events from the shared store
-Frontend/wwwroot/js/c11-signalr.js	SignalR connection, event handling, counters and Start/Stop
-Frontend/Views/Connectivity/Index.cshtml	Fourth SignalR card and client script
-Frontend/Program.cs	Hosted service registration and app.MapHub<ConnectivityHub>("/connectivityHub")
-
-
-C11 reuses ConnectivityEventStore, the existing product CRUD event publishers, and C10 endpoints. No additional PostgreSQL migration is required. The existing SignalR infrastructure from C13 is also reused.
-Manual verification
-The browser screenshots from the C11 implementation show:
-- SignalR panel status: Connected, with one connection.
-- A product edit event: #4 [product-updated] Updated product #19: Milka.
-- 1 received live event, approximately 120 JSON payload bytes, and 4 ms displayed delivery delay in the C11 panel.
-- The same event delivered by all three existing C10 transports.
-- Server history retaining two demo events plus product creation and update events.
-These are individual example observations, not averaged benchmark results. The displayed delay is calculated from the client clock and the server event timestamp; it may be affected by clock differences. Payload bytes exclude SignalR negotiation, network headers, framing and TLS traffic.
-
-The demonstrated test covers actual product updates, not only a simulated demo event. Additional recommended verification: test a fresh product creation and deletion while the Connectivity page remains open in a separate browser tab; verify reconnect and repeat automated regression tests.
-C11 limitations
-- SignalR chooses the transport automatically, so the actual selected transport should be checked in browser DevTools when comparing network behavior.
-- The in-memory event store retains a maximum of 200 events and is cleared when the process restarts.
-- The event history is not a permanent audit log.
-- No dedicated C11 automated test count or new CI success is claimed without verification.
-- Current C11 evidence demonstrates manual functionality; full regression testing and quantitative performance comparison remain separate steps.
-C11 status: implemented and manually demonstrated. Potential coursework value: 3 points.
-Postman Collection — QA1 + B1 + B9
-File:
-
-Postman/CatalogManager_QA1_B1_B9.postman_collection.json
-
-The collection covers:
-- QA1 automated API testing.
-- B1 pagination.
-- B9 output caching.
-Run
-1. Start CatalogManager.
-2. Import the collection into Postman.
-3. Set the baseUrl variable.
-4. Select the relevant folder.
-5. Use Collection Runner.
-6. Review passed and failed assertions.
-IIS Express: https://localhost:44361
-
-Docker: http://localhost:8085
-
-Use a test database for data-changing scenarios.
-Local Setup Without Docker
-Restore Dependencies
-
-dotnet restore CatalogManager.slnx
-
-Configure PostgreSQL
-Create CatalogManagerDb and configure User Secrets:
-
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=CatalogManagerDb;Username=postgres;Password=YOUR_PASSWORD" --project Frontend
-
-Apply Migrations
-
-dotnet ef database update --project Infrastructure --startup-project Frontend
-
-Run
-Open the solution in Visual Studio.
-
-Select IIS Express and press Ctrl + F5.
-
-Alternatively:
-
-dotnet run --project Frontend
-
-Main Pages
-Feature	Route
-Products	/Products
-Create Product	/Products/Create
-Stores Map	/StoresMap
-Statistics	/Statistics
-Currency Rates	/CurrencyRates
-Notes Editor	/NotesEditor
-Connectivity comparison	/Connectivity
-
-
-Currency Rates requires external API availability.
-
-Shared Notes uses SignalR and server-side JSON files.
-Automated Testing
+The search indexes product names and descriptions and returns relevance-ranked results.
+
+Implementation:
+
+- `Frontend/Services/ProductSearchService.cs`
+- `Frontend/ApiControllers/ProductSearchApiController.cs`
+- `Frontend/Controllers/ProductSearchController.cs`
+- `Frontend/Views/ProductSearch/`
+
+### F3 — Drag-and-Drop Sorting
+
+Added drag-and-drop reordering to the notes editor.
+
+The updated order is saved through the existing shared-document mechanism.
+
+Implementation:
+
+- `Frontend/wwwroot/js/notes-editor.js`
+
+### C10 — Connectivity Comparison
+
+Implemented three methods of client-server event delivery:
+
+- WebSockets
+- Long Polling
+- Adaptive Polling
+
+The module displays live product events, connection statistics, delivery delays, and a bounded server event history.
+
+Implementation:
+
+- `Frontend/Controllers/ConnectivityController.cs`
+- `Frontend/Services/ConnectivityEventStore.cs`
+- `Frontend/wwwroot/js/connectivity.js`
+- `Frontend/Views/Connectivity/`
+
+### C11 — SignalR Real-Time Updates
+
+Extended C10 with real-time SignalR notifications.
+
+A hosted service forwards catalog events to connected SignalR clients.
+
+Implementation:
+
+- `Frontend/HUBS/ConnectivityHub.cs`
+- `Frontend/Services/ConnectivitySignalRForwarder.cs`
+- `Frontend/wwwroot/js/c11-signalr.js`
+
+## 7. Automated Testing
+
 The solution contains:
+
 - UnitTests
 - IntegrationTests
 - E2ETests
-Integration Test Database
-Use a separate database named CatalogManagerTestDb.
 
+### Unit Tests
+
+```powershell
+dotnet test UnitTests/CatalogManager.UnitTests.csproj
+```
+
+### Integration Tests
+
+Integration tests use a separate database named `CatalogManagerTestDb`.
+
+Create this database before running the tests.
+
+Configure the connection string:
+
+```powershell
 dotnet user-secrets set "ConnectionStrings:TestConnection" "Host=localhost;Port=5432;Database=CatalogManagerTestDb;Username=postgres;Password=YOUR_PASSWORD" --project IntegrationTests
+```
 
-Unit Tests
+Run:
 
-dotnet test UnitTests
+```powershell
+dotnet test IntegrationTests/CatalogManager.IntegrationTests.csproj
+```
 
-Integration Tests
+The test factory checks the database name and applies EF Core migrations.
 
-dotnet test IntegrationTests
+### Playwright E2E Tests
 
-E2E Tests with IIS Express
-Keep the application running:
+Build the E2E project:
 
+```powershell
+dotnet build E2ETests/CatalogManager.E2ETests.csproj
+```
+
+Install Chromium with Playwright using PowerShell 7:
+
+```powershell
+pwsh E2ETests/bin/Debug/net10.0/playwright.ps1 install chromium
+```
+
+Start the web application before executing local browser tests.
+
+For IIS Express:
+
+```powershell
 $env:CATALOGMANAGER_E2E_BASE_URL = "https://localhost:44361"
 
 dotnet test E2ETests/CatalogManager.E2ETests.csproj
+```
 
-E2E Tests with Docker
+For Docker, set the base URL to:
 
-docker compose up --build -d
+`http://localhost:8085`
 
-$env:CATALOGMANAGER_E2E_BASE_URL = "http://localhost:8085"
+E2E tests may modify development data.
 
-dotnet test E2ETests/CatalogManager.E2ETests.csproj
+### GitHub Actions
 
-E2E Tests on GitHub
-Open GitHub → Actions → QA2 - Playwright E2E Tests.
+The QA2 workflow is stored in:
 
-The workflow prepares the application, database, and browser automatically.
-Latest Test Results
-Test Type	Last Observed Result
-Unit Tests	208 passed
-Integration Tests	69 passed
-Local Playwright E2E	7 connection failures in a later run
-Earlier Playwright E2E / GitHub Actions	7 passed
+`.github/workflows/qa2-playwright.yml`
 
+It automatically prepares Docker, PostgreSQL, database migrations, and Chromium before executing seven Playwright tests.
 
-A total of 277 C# tests passed in the latest observed local run.
+The latest observed GitHub Actions run after the navigation-test reliability fix completed successfully.
 
-The local QA2 connection failures should be resolved by running the tests while the application is accessible.
+### Test Results
 
-No new automated C12, C13, C14, C15, B4, F3, C10 or C11 test count is claimed.
-Code Coverage
-Collect coverage:
+Previously recorded results:
 
-dotnet test UnitTests --collect:"XPlat Code Coverage"
+| Test Category | Result |
+|---|---|
+| Unit tests | 208 passed |
+| Integration tests | 69 passed |
+| Playwright E2E | 7 passed in the latest observed GitHub Actions run |
 
-dotnet test IntegrationTests --collect:"XPlat Code Coverage"
+Unit and integration test numbers refer to previously recorded runs. They should be verified again for the final checkout.
+
+## 8. Code Coverage
+
+Collect .NET code coverage:
+
+```powershell
+dotnet test UnitTests/CatalogManager.UnitTests.csproj --collect:"XPlat Code Coverage"
+
+dotnet test IntegrationTests/CatalogManager.IntegrationTests.csproj --collect:"XPlat Code Coverage"
+```
 
 Install ReportGenerator if necessary:
 
+```powershell
 dotnet tool install --global dotnet-reportgenerator-globaltool
+```
 
-Generate the report:
+Generate the combined report:
 
+```powershell
 reportgenerator -reports:"UnitTests/TestResults/**/coverage.cobertura.xml;IntegrationTests/TestResults/**/coverage.cobertura.xml" -targetdir:"CoverageReport" -reporttypes:"Html;Cobertura"
+```
 
 Open:
 
-CoverageReport/index.html
+`CoverageReport/index.html`
 
-An earlier pre-C5 coverage report showed:
-- Line coverage: 76.1%.
-- Branch coverage: 77.7%.
-- Application layer line coverage: 100%.
-  These are historical measurements, not current C10 coverage results.
-Security Notes
-- Never commit database credentials or secrets.
-- Keep .env excluded from Git.
-- Use User Secrets for local configuration.
-- Use GitHub Secrets for sensitive CI configuration.
-- Run data-changing tests only against development or test databases.
-- MVC forms use antiforgery protection.
-- REST API inputs use validation and business rules.
-- robots.txt is not access control.
-- Exchange rate calculations are indicative.
-- Do not store passwords or confidential information in localStorage.
-- Shared notes are not protected by document-level authorization.
-- Do not commit Frontend/App_Data/SharedNotes/ documents.
-- Browser-side document ID validation does not replace server-side validation.
-- JSON files are validated before import; never import untrusted confidential data.
-- Exported files may contain the current notes; handle downloads appropriately.
-- Production deployment requires additional security hardening.
-Project Status
-Implemented and Verified
-- C1 — MVC Application.
-- C5 — REST API.
-- QA1 — Postman automated API tests.
-- B1 — Pagination API.
-- C8 — Interactive Stores Map.
-- B9 — API Output Caching.
-- C4 — Docker Containerization.
-- C6 — Bootstrap Landing Pages.
-- C7 — SEO Optimization.
-- F1 — Chart.js Data Visualization.
-- QA2 — Playwright E2E and GitHub Actions.
-- F2 — AJAX Autocomplete.
-- B2 — PrivatBank API.
-- C12 — Dynamic Notes Editor.
-- C13 — Shared Notes with SignalR.
-- C14 — Collaborative Change Visualization.
-- C15 — Browser File API import and JSON/Markdown export.
-- B4 — Lucene.NET Full-Text Product Search API.
-- F3 — Drag-and-Drop Notes Block Reordering.
-- C10 — Connectivity comparison (manual functional checks passed; final quantitative evaluation pending).
-- C11 — SignalR notifications within the C10 comparison (manual product-update event verified; final regression testing pending).
+The previously generated coverage report describes an earlier project version and should not be treated as current coverage for all 21 stages.
+
+The seven E2E scenarios cover navigation, category CRUD and validation, access to product pages, the stores map, statistics, and robots.txt.

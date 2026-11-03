@@ -42,7 +42,8 @@ public sealed class ProductSearchService(IProductService productService)
         if (products.Count == 0)
             return Array.Empty<ProductSearchResult>();
 
-        // RAMDirectory is intentionally per-request for this coursework implementation.
+        // Build a new in-memory search index for each request
+        // to ensure that search results reflect current product data.
         using var directory = new RAMDirectory();
         using var analyzer = new StandardAnalyzer(Version);
 

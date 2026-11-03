@@ -16,9 +16,6 @@ public class CatalogManagerWebApplicationFactory
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        // Вказуємо актуальну папку MVC-проєкту.
-        // Раніше вона називалася CatalogManager,
-        // тепер вона називається Frontend.
         var solutionDirectory = Path.GetFullPath(
             Path.Combine(
                 AppContext.BaseDirectory,

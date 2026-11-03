@@ -9,7 +9,7 @@
   </Folder>
   <Project Path="Application/CatalogManager.Application.csproj" />
   <Project Path="Domain/CatalogManager.Domain.csproj" />
-  <Project Path="Frontend/CatalogManager.csproj" />
+  <Project Path="Frontend/Frontend.csproj" />
   <Project Path="Infrastructure/CatalogManager.Infrastructure.csproj" />
   <Project Path="IntegrationTests/CatalogManager.IntegrationTests.csproj" Id="0dbfb91f-1d28-46af-9c14-90c3226af82f" />
   <Project Path="UnitTests/CatalogManager.UnitTests.csproj" />
